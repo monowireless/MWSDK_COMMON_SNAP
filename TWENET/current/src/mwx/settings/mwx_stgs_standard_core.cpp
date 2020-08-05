@@ -2,8 +2,6 @@
  * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
  * AGREEMENT).                                                   */
 
-#include "mwx_settings.hpp"
-
 // TWELITE hardware like
 #include <jendefs.h>
 #include <ToCoNet.h>
@@ -15,6 +13,10 @@
 #include "tweinteractive_nvmutils.h"
 #include "twenvm.h"
 #include "twesysutils.h"
+#include "tweutils.h"
+
+#include "mwx_stgs_standard_core.h"
+#include "mwx_stgs_standard.hpp"
 
 /**********************************************************************************
  * DEFINES
@@ -41,14 +43,13 @@
 /**********************************************************************************
  * FUNCTION PROTOTYPES
  **********************************************************************************/
-static void s_appLoadData(uint8 u8kind, uint8 u8slot, bool_t bNoLoad);
 
 /**********************************************************************************
  * CONSTANTS
  **********************************************************************************/
 
 /**********************************************************************************
- * EXTERNS
+ * EXTERNS with "C" linkage (works with twesettings C library)
  **********************************************************************************/
 extern "C" TWE_tsFILE* _psSerial;
 
@@ -57,18 +58,19 @@ extern "C" TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContex
 extern "C" TWE_APIRET TWESTG_cbu32LoadSetting(TWE_tsBuffer *pBuf, uint8 u8kind, uint8 u8slot, uint32 u32Opt, TWESTG_tsFinal *psFinal);
 extern "C" TWE_APIRET TWESTG_cbu32SaveSetting(TWE_tsBuffer *pBuf, uint8 u8kind, uint8 u8slot, uint32 u32Opt, TWESTG_tsFinal *psFinal);
 
+
 /**********************************************************************************
  * VARIABLES
  **********************************************************************************/
 /*!
  * tsFinal 構造体のデータ領域を宣言する
  */
-TWESTG_DECLARE_FINAL(MYDAT, STGS_MAX_SETTINGS_COUNT, 16, 4); // 確定設定リストの配列等の宣言
+TWESTG_DECLARE_FINAL(SET_STD, STGS_MAX_SETTINGS_COUNT, 16, 4); // 確定設定リストの配列等の宣言
 
 /*!
  * 確定設定リスト
  */
-TWESTG_tsFinal sFinal;
+static TWESTG_tsFinal sFinal;
 
 /**
  * @brief 種別の保存
@@ -86,35 +88,65 @@ static uint8 u8AppSlot = 0;
  */
 static uint8 u8MenuMode = 0;
 
+/**
+ * @brief sFinal のリロードが必要な場合に 1 をセットする
+ */
+static uint8 u8Dirty = 0; // should reload this
+
+/*!
+ * E_TWESTG_DEFSETS_CHANNELS_3（チャネル設定、最大３チャネル）を削除する
+ */
+uint8 SETSTD_CUST_COMMON[SIZE_SETSTD_CUST_COMMON] = {
+	8   // 総バイト数(このバイトは含まない。手計算で間違えないように入力！)
+	, E_TWESTG_DEFSETS_APPID, (TWESTG_DATATYPE_UINT32 << 4) | 4, 0x00, 0x34, 0x56, 0x78 
+	, E_TWESTG_DEFSETS_CHANNELS_3, TWESTG_DATATYPE_UNUSE
+};
+
 /*!
  * 設定定義(tsSettings)
  *   スロット0..7までの定義を記述
  */
-const TWESTG_tsSettingsListItem SetList[1][9] = {
+#if 0
+TWESTG_tsSettingsListItem SetList[1][9] = {
 	{
-		{ STGS_KIND_APPDEF, TWESTG_SLOT_DEFAULT, { INTRCT_USER_BASE_SETTINGS, NULL, INTRCT_USER_SLOT0_SETTINGS, NULL, NULL, NULL } },
-		{ STGS_KIND_APPDEF, TWESTG_SLOT_1,       { INTRCT_USER_BASE_SETTINGS, NULL, INTRCT_USER_SLOT1_SETTINGS, NULL, NULL, NULL } },
-		{ STGS_KIND_APPDEF, TWESTG_SLOT_2,       { INTRCT_USER_BASE_SETTINGS, NULL, INTRCT_USER_SLOT2_SETTINGS, NULL, NULL, NULL } },
-		{ STGS_KIND_APPDEF, TWESTG_SLOT_3,       { INTRCT_USER_BASE_SETTINGS, NULL, INTRCT_USER_SLOT3_SETTINGS, NULL, NULL, NULL } },
-		{ STGS_KIND_APPDEF, TWESTG_SLOT_4,       { INTRCT_USER_BASE_SETTINGS, NULL, INTRCT_USER_SLOT4_SETTINGS, NULL, NULL, NULL } },
-		{ STGS_KIND_APPDEF, TWESTG_SLOT_5,       { INTRCT_USER_BASE_SETTINGS, NULL, INTRCT_USER_SLOT5_SETTINGS, NULL, NULL, NULL } },
-		{ STGS_KIND_APPDEF, TWESTG_SLOT_6,       { INTRCT_USER_BASE_SETTINGS, NULL, INTRCT_USER_SLOT6_SETTINGS, NULL, NULL, NULL } },
-		{ STGS_KIND_APPDEF, TWESTG_SLOT_7,       { INTRCT_USER_BASE_SETTINGS, NULL, INTRCT_USER_SLOT7_SETTINGS, NULL, NULL, NULL } },
+		{ STGS_KIND_APPDEF, TWESTG_SLOT_DEFAULT, { SET_STD_DEFSETS, NULL, INTRCT_USER_SLOT0_SETTINGS, SETSTD_CUST_COMMON, NULL, NULL } },
+		{ STGS_KIND_APPDEF, TWESTG_SLOT_1,       { SET_STD_DEFSETS, NULL, INTRCT_USER_SLOT1_SETTINGS, SETSTD_CUST_COMMON, NULL, TWESTG_DEFCUST_SLOT[1] } },
+		{ STGS_KIND_APPDEF, TWESTG_SLOT_2,       { SET_STD_DEFSETS, NULL, INTRCT_USER_SLOT2_SETTINGS, SETSTD_CUST_COMMON, NULL, TWESTG_DEFCUST_SLOT[2] } },
+		{ STGS_KIND_APPDEF, TWESTG_SLOT_3,       { SET_STD_DEFSETS, NULL, INTRCT_USER_SLOT3_SETTINGS, SETSTD_CUST_COMMON, NULL, TWESTG_DEFCUST_SLOT[3] } },
+		{ STGS_KIND_APPDEF, TWESTG_SLOT_4,       { SET_STD_DEFSETS, NULL, INTRCT_USER_SLOT4_SETTINGS, SETSTD_CUST_COMMON, NULL, TWESTG_DEFCUST_SLOT[4] } },
+		{ STGS_KIND_APPDEF, TWESTG_SLOT_5,       { SET_STD_DEFSETS, NULL, INTRCT_USER_SLOT5_SETTINGS, SETSTD_CUST_COMMON, NULL, TWESTG_DEFCUST_SLOT[5] } },
+		{ STGS_KIND_APPDEF, TWESTG_SLOT_6,       { SET_STD_DEFSETS, NULL, INTRCT_USER_SLOT6_SETTINGS, SETSTD_CUST_COMMON, NULL, TWESTG_DEFCUST_SLOT[6] } },
+		{ STGS_KIND_APPDEF, TWESTG_SLOT_7,       { SET_STD_DEFSETS, NULL, INTRCT_USER_SLOT7_SETTINGS, SETSTD_CUST_COMMON, NULL, TWESTG_DEFCUST_SLOT[7] } },
 		{ TWESTG_KIND_VOID, TWESTD_SLOT_VOID, { NULL }}, // TERMINATE
 	},
 };
+#endif
+
+/**
+ * デフォルトの設定リスト (単一設定、スロット無し)
+ */
+static const TWESTG_tsSettingsListItem SetList_SINGLE[] = {
+	{ STGS_KIND_APPDEF, TWESTG_SLOT_DEFAULT, { SET_STD_DEFSETS, NULL, NULL, SETSTD_CUST_COMMON, NULL, NULL } },
+	{ TWESTG_KIND_VOID, TWESTD_SLOT_VOID, { NULL }}, // TERMINATE
+};
+
+/**
+ * スロットのテーブル
+ */
+static const TWESTG_tsSettingsListItem *pSetList = SetList_SINGLE;
+static uint8 u8SetSlotCount = 1;
 
 /**
  * @brief 設定リストのメニュー名
  */
-const uint8 SetList_names[][8] = { "*", };
+static const uint8 SetList_names[][8] = { "*", };
 
 /**
  * @brief メニュー定義
  */
-const TWEINTRCT_tsFuncs asFuncs[] = {
+static const TWEINTRCT_tsFuncs asFuncs[] = {
 	{ 0, (uint8*)"ROOT MENU", TWEINTCT_vSerUpdateScreen_defmenus, TWEINTCT_vProcessInputByte_defmenus, TWEINTCT_vProcessInputString_defmenus, TWEINTCT_u32ProcessMenuEvent_defmenus }, // standard _settings
-	{ 1, (uint8*)"CONFIG MENU", TWEINTCT_vSerUpdateScreen_settings, TWEINTCT_vProcessInputByte_settings, TWEINTCT_vProcessInputString_settings, TWEINTCT_u32ProcessMenuEvent_settings }, // standard _settings
+	{ 1, (uint8*)"CONFIG", TWEINTCT_vSerUpdateScreen_settings, TWEINTCT_vProcessInputByte_settings, TWEINTCT_vProcessInputString_settings, TWEINTCT_u32ProcessMenuEvent_settings }, // standard _settings
 	{ 2, (uint8*)"EEPROM UTIL", TWEINTCT_vSerUpdateScreen_nvmutils, TWEINTCT_vProcessInputByte_nvmutils, TWEINTCT_vProcessInputString_nvmutils, TWEINTCT_u32ProcessMenuEvent_nvmutils }, // standard _settings
 	{ 0xFF, NULL, NULL, NULL }
 };
@@ -205,11 +237,11 @@ static void s_appLoadData(uint8 u8kind, uint8 u8slot, bool_t bNoLoad) {
 
 	/// tsFinal 構造体の初期化とロード
 	// tsFinal 構造体の初期化
-	TWESTG_INIT_FINAL(MYDAT, &sFinal);
+	TWESTG_INIT_FINAL(SET_STD, &sFinal);
 	// tsFinal 構造体に基本情報を適用する
 	TWESTG_u32SetBaseInfoToFinal(&sFinal, INTRCT_USER_APP_ID, APPVER, STGS_SET_VER, STGS_SET_VER_COMPAT);
 	// tsFinal 構造体に kind, slot より、デフォルト設定リストを構築する
-	TWESTG_u32SetSettingsToFinal(&sFinal, u8kind, u8slot, SetList[u8kind]);
+	TWESTG_u32SetSettingsToFinal(&sFinal, u8kind, u8slot, pSetList);
 	// セーブデータがあればロードする
 	TWESTG_u32LoadDataFrAppstrg(&sFinal, u8kind, u8slot, INTRCT_USER_APP_ID, STGS_SET_VER_COMPAT, bNoLoad ? TWESTG_LOAD_OPT_NOLOAD : 0);
 
@@ -321,11 +353,11 @@ TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContext, uint32 u
 						u8AppSlot--;
 					}
 				}
-
+				
 				// SLOT 数のチェック
 				if (u8AppKind == STGS_KIND_APPDEF) {
-					if (u8AppSlot == 0xFF) u8AppSlot = STGS_KIND_APPDEF_SLOT_MAX - 1;
-					else if (u8AppSlot >= STGS_KIND_APPDEF_SLOT_MAX) u8AppSlot = 0;
+					if (u8AppSlot == 0xFF) u8AppSlot = u8SetSlotCount - 1;
+					else if (u8AppSlot >= u8SetSlotCount) u8AppSlot = 0;
 				}
 			}
 		}
@@ -367,7 +399,8 @@ TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContext, uint32 u
 			// 別の固定文字列へのポインタに書き換えてもかまわない。
 
 			// このコードは -Os 最適化では不具合を起こす場合がある（case 節内にあるのが原因？）
-			TWE_snprintf(*((char**)vpArg), 16, "tick=%d", u32TickCount_ms);
+			//TWE_snprintf(*((char**)vpArg), 16, "tick=%d", u32TickCount_ms);
+			TWE_snprintf(*((char**)vpArg), 16, "SID=%8X", ToCoNet_u32GetSerial());
 		}
 		break;
 
@@ -385,26 +418,73 @@ TWE_APIRET TWEINTRCT_cbu32GenericHandler(TWEINTRCT_tsContext *pContext, uint32 u
 	return u32ApiRet;
 }
 
-/**********************************************************************************
- * weak link defs
- **********************************************************************************/
-void INTRCT_USER_vProcessInputByte(TWESERCMD_tsSerCmd_Context *pSerCmd, int16 u16Byte) {
-    return;
-}
 
-/**********************************************************************************
- * mwx::interactive_settings
- **********************************************************************************/
-void mwx::interactive_settings::begin(uint8_t slot) {
-    // initialize the structure
-    TWEINTRCT_pscInit(
-            &sFinal, nullptr, _psSerial,
-            (void*)INTRCT_USER_vProcessInputByte, // process bytes
-            (const TWEINTRCT_tsFuncs*)asFuncs);
+/*********************************************************************************
+ * IMPL of StgsStandard
+ *********************************************************************************/
+#define DEBUG_LVL 99
 
-    // load initial data
-    s_appLoadData(0x00, slot, FALSE);
+namespace mwx { inline namespace L1 {	
+	void StgsStandard::reload(uint8_t slot) {
+		s_appLoadData(0x00, slot, FALSE);
+	}
 
-    // configure settings
-    _stgs.attach(&sFinal);
-}
+	void StgsStandard::_reload(bool bSetDirty) {
+		if (bSetDirty) u8Dirty = 1;
+		else {
+			if (u8Dirty) {
+				reload();
+			}
+		}
+	}
+	void StgsStandard::_setup() {
+		MWX_DebugMsg(DEBUG_LVL, "_setup()\r\n");
+		// load initial data
+		//s_appLoadData(0x00, 0xFF, FALSE);
+
+		// Serial surrogate
+		Serial.register_surrogate((void*)&this->serial, _serial::_available, _serial::_read);
+
+		// initialize the structure
+		_psIntr = TWEINTRCT_pscInit(
+			&sFinal, nullptr, _psSerial,
+			(void*)_vProcessInputByte, // process bytes
+			(const TWEINTRCT_tsFuncs*)asFuncs);
+		
+		// optional settings
+		_psIntr->config.u8Mode = 0; // 0:normal 1:init mode is the interactive.
+		// _psIntr->config.u8AlwaysKeyReport = 1; // 0:normal 1:always has a key call back
+		_psIntr->config.u8OptSerCmd = 0x01; // echo back seeting
+		// _psIntr->config.u8NoSysReset = 1; // no reset required to take effect
+		_psIntr->config.u8screen_default = 1; // opening screen (0: menu, 1: settigns)
+		//_psIntr->config.u8DefMenusSlots = 1; // list slot 1..MAX
+		_psIntr->pvWrapObjCpp = (void*)this; // store this object pointer
+		//_psIntr->u16HoldUpdateScreen = 96; // refresh count (set 1 or above)
+		TWEINTRCT_vReConf(_psIntr); // apply optional settings
+
+		// configure settings
+		set.attach(&sFinal);    
+	}
+
+	void StgsStandard::_begin() {
+		MWX_DebugMsg(DEBUG_LVL, "_begin()\r\n");
+	}
+
+	void StgsStandard::set_default_appid(uint32_t u32appid) {
+		uint8_t *q = &SETSTD_CUST_COMMON[3];
+		S_DWORD(q, u32appid);
+		INTRCT_USER_APP_ID = u32appid;
+	}
+
+	void StgsStandard::set_ch_multi() {
+		SETSTD_CUST_COMMON[7] = E_TWESTG_DEFSETS_CHANNEL;
+	}
+
+	bool StgsStandard::_get_ch_multi() {
+		return SETSTD_CUST_COMMON[7] == E_TWESTG_DEFSETS_CHANNEL;
+	} 
+
+	void StgsStandard::set_appname(const char* appname) {
+		INTRCT_USER_APP_NAME = appname;
+	}
+}}

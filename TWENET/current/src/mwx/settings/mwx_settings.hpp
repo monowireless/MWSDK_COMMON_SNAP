@@ -1,10 +1,11 @@
-/* Copyright (C) 2019 Mono Wireless Inc. All Rights Reserved.    *
- * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
- * AGREEMENT).                                                   */
+/* Copyright (C) 2019-2020 Mono Wireless Inc. All Rights Reserved. *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE     *
+ * AGREEMENT).                                                     */
 
 #pragma once
 
 #include <iterator>
+#include <algorithm>
 
 #include "twecommon.h"
 #include "twesettings.h"
@@ -17,21 +18,21 @@
 
 #include "mwx_debug.h"
 
-// exportable setting information.
-//   if not set, use default instead.
-extern const char *INTRCT_USER_APP_NAME;
-extern const uint32_t INTRCT_USER_APP_ID;
-extern const TWESTG_tsElement INTRCT_USER_BASE_SETTINGS[];
-extern const TWESTG_tsElement INTRCT_USER_SLOT0_SETTINGS[];
-extern const TWESTG_tsElement INTRCT_USER_SLOT1_SETTINGS[];
-extern const TWESTG_tsElement INTRCT_USER_SLOT2_SETTINGS[];
-extern const TWESTG_tsElement INTRCT_USER_SLOT3_SETTINGS[];
-extern const TWESTG_tsElement INTRCT_USER_SLOT4_SETTINGS[];
-extern const TWESTG_tsElement INTRCT_USER_SLOT5_SETTINGS[];
-extern const TWESTG_tsElement INTRCT_USER_SLOT6_SETTINGS[];
-extern const TWESTG_tsElement INTRCT_USER_SLOT7_SETTINGS[];
-
+// object ID
 namespace mwx { inline namespace L1 {
+	namespace SETTINGS {
+		// class ID enums
+		static const uint8_t NONE = 0;
+		static const uint8_t STANDARD = 1;
+
+		// for << config.
+		struct appname { const char * _val; appname(const char *val) : _val(val) {} };
+		struct appid_default { uint32_t _val; appid_default(uint32_t val) : _val(val) {}};
+		struct ch_multi {};
+		struct open_at_start {};
+	}
+
+	// settings class
 	class settings {
 	public:
 		typedef uint8_t size_type;
@@ -129,6 +130,10 @@ namespace mwx { inline namespace L1 {
 			return iterator(_psFinal->u8DataCount, this);
 		}
 
+		inline iterator find_by_id(uint8_t id) {
+			return std::find_if(begin(), end(), [id](element_type& x) { return x.get_id() == id; } );
+		}
+
 		inline TWESTG_tsFinal* get_psFinal() {
 			return _psFinal;
 		}
@@ -138,6 +143,7 @@ namespace mwx { inline namespace L1 {
 	};
 
 
+/*
 	class interactive_settings {
 		settings _stgs;
 
@@ -153,6 +159,7 @@ namespace mwx { inline namespace L1 {
 		}
 
 	};
+*/
 
 	inline void operator << (uint32_t& u32, settings::value_type& e) {
 		u32 = e._body->get_psFinal()->asDatum[e._pos].uDatum.u32;
