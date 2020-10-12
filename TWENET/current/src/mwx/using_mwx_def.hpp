@@ -13,5 +13,11 @@ using LED_TIMER = mwx::periph_led_timer;
 using ANALOGUE = mwx::periph_analogue;
 using PULSE_COUNTER = mwx::periph_pulse_counter;
 
+using TwoWire = mwx::periph_twowire<MWX_TWOWIRE_BUFF>;
+
 using std::make_pair;
+
+// function aliases
+static constexpr auto& mwx_snprintf = ::snprintf_;
+static constexpr auto& mwx_printf = ::printf_;
 #endif
