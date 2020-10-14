@@ -10,16 +10,15 @@ MWSDK(Win/macOS/Linux) から各ライブラリのみを切り出しています
 * LICENSE
 * MkFiles
 * TWENET
+* Act_samples (Act サンプルディレクトリ)
+  https://github.com/monowireless/Act_samples
+* Wks_TweApps (TWE APPS)
+  https://github.com/monowireless?tab=repositories
+* Act_extras (Act サンプル追加分)
 
 
 ## 本レポジトリに含まれないディレクトリ
 
-* Act サンプルディレクトリ
-  https://github.com/monowireless/Act_samples
-* TWEAPPS (以下リンク先のレポジトリ一覧を開いて App??? Samp??? を個別に参照してください)
-  https://github.com/monowireless?tab=repositories
-* Act サンプル追加分 (以下リンク先のレポジトリ一覧を開いて ActEx??? を個別に参照してください)
-  https://github.com/monowireless?tab=repositories
 * ツール (Tools)
   サイズが巨大なため別途配布しています。
   https://mono-wireless.com/stage より TWELIET STAGE 配布パッケージ一式に含まれます。
