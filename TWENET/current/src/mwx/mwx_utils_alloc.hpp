@@ -8,6 +8,9 @@
 
 namespace mwx { inline namespace L1 {
 
+static const int ALLOC_TYPE_LOCAL = 0;
+static const int ALLOC_TYPE_HEAP = 1;
+static const int ALLOC_TYPE_ATTACH = 2;
 template <typename T>
 class _mwx_alloc {
 protected:
@@ -15,6 +18,7 @@ protected:
 	uint16_t _size;
 public:
 	_mwx_alloc() : _p(nullptr), _size(0) {}
+
 };
 
 template <typename T>
@@ -25,7 +29,7 @@ protected:
 public:
     using super = _mwx_alloc<T>;
 	alloc_heap() : _p_heap(nullptr), _sz(0) {}
-	// ~alloc_heap() { if (super::_p) delete(super::_p); } // no delete on the system!
+	~alloc_heap() { if (super::_p) delete(super::_p); }
 
 	void init_heap(uint16_t s) {
         if (_p_heap == nullptr) {
@@ -47,6 +51,7 @@ public:
     }
     
     void _is_heap() {}
+    static const int _type = ALLOC_TYPE_HEAP;
 };
 
 template <typename T, int N>
@@ -73,6 +78,7 @@ public:
     }
 
     void _is_local() {}
+    static const int _type = ALLOC_TYPE_LOCAL;
 };
 
 template <typename T>
@@ -96,6 +102,7 @@ public:
     }
 
     void _is_attach() {}
+    static const int _type = ALLOC_TYPE_ATTACH;
 };
 
 }}

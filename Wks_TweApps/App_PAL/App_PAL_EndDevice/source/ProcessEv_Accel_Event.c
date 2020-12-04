@@ -4,10 +4,15 @@
 
 #include <jendefs.h>
 
+#ifdef USE_CUE
+#include "App_CUE.h"
+#else
+#include "EndDevice.h"
+#endif
+
 #include "utils.h"
 #include "ccitt8.h"
 #include "Interactive.h"
-#include "EndDevice.h"
 #include "sensor_driver.h"
 #include "MC3630.h"
 #include "accel_event.h"
@@ -19,8 +24,12 @@ static void vProcessAccel_Event(teEvent eEvent);
 
 #define ABS(c) (c<0?(-1*c):c)
 
+#define E_OPT_DICEMODE 0x02000000UL
+#define IS_OPT_DICEMODE() ( (sAppData.sFlash.sData.u32param & E_OPT_DICEMODE) != 0 )
+
 static uint8 u8sns_cmplt = 0;
-static uint8 u8analyze_block = 4;		// 0~4まで
+//static uint8 u8analyze_block = 4;		// 0~4まで
+static uint8 u8before_event = 0;
 static tsSnsObj sSnsObj;
 extern tsObjData_MC3630 sObjMC3630;
 
@@ -35,6 +44,8 @@ enum {
 PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 	static bool_t bFirst = TRUE;
 	if (eEvent == E_EVENT_START_UP) {
+		V_PRINTF(LB "*** Start State Machine");
+
 		// センサーがらみの変数の初期化
 		u8sns_cmplt = 0;
 		vMC3630_Init( &sObjMC3630, &sSnsObj );
@@ -44,7 +55,8 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 			ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_SNS_INIT);
 		}else{
 			if( !sAppData.bWakeupByButton ){
-				//V_PRINTF(LB "*** Wake by Timer. No Action...");
+				V_PRINTF(LB "*** Wake by Timer. No Action...");
+				sObjMC3630.u8Event = u8before_event;
 				ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_POWEROFF); // スリープ待ち状態
 			}else{
 				vSnsObj_Process(&sSnsObj, E_ORDER_KICK);
@@ -76,15 +88,17 @@ PRSEV_HANDLER_DEF(E_STATE_APP_WAIT_SNS_INIT, tsEvent *pEv, teEvent eEvent, uint3
 			ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_POWEROFF); // スリープ状態へ遷移
 			return;
 		}else{
-			vMC3630_StartSNIFF( 2, 1 );
-			ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_POWEROFF); // スリープ状態へ遷移
+			if( IS_APPCONF_OPT_EVENTMODE() ){
+				vMC3630_StartSNIFF( 2, 1 );
+			}
 		}
+	}
+	if (ToCoNet_Event_u32TickFrNewState(pEv) > 750) {
+		ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_POWEROFF); // スリープ状態へ遷移
 	}
 }
 
 PRSEV_HANDLER_DEF(E_STATE_RUNNING, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
-	static uint8 u8count = 0;
-
 		// 短期間スリープからの起床をしたので、センサーの値をとる
 	if ((eEvent == E_EVENT_START_UP) && (u32evarg & EVARG_START_UP_WAKEUP_RAMHOLD_MASK)) {
 		V_PRINTF("#");
@@ -93,32 +107,32 @@ PRSEV_HANDLER_DEF(E_STATE_RUNNING, tsEvent *pEv, teEvent eEvent, uint32 u32evarg
 
 	// 送信処理に移行
 	if (u8sns_cmplt == E_SNS_ALL_CMP) {
-		V_PRINTF(LB"count = %d", u8count);
-		if( u8count == 0 ){
-			vMC3630_StartFIFO();
-			vAccelEvent_Init( 100 );
-			bAccelEvent_SetData( sObjMC3630.ai16Result[MC3630_X], sObjMC3630.ai16Result[MC3630_Y], sObjMC3630.ai16Result[MC3630_Z], sObjMC3630.u8FIFOSample );
+		tsAccelEventData sAccelEvent;
+		vAccelEvent_Init( 100 );
+		bAccelEvent_SetData( sObjMC3630.ai16Result[MC3630_X], sObjMC3630.ai16Result[MC3630_Y], sObjMC3630.ai16Result[MC3630_Z], sObjMC3630.u8FIFOSample );
 
-			u8count++;
-			sObjMC3630.u8Event = ACCEL_EVENT_NOTANALYZED;
-			ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_POWEROFF);
-		}else if( u8count == u8analyze_block-1 ){
-			vMC3630_StartSNIFF(2, 1);
+		if( IS_APPCONF_OPT_DICEMODE() ){
+			uint8 u8e = u8AccelEvent_Top();
 
-			bAccelEvent_SetData( sObjMC3630.ai16Result[MC3630_X], sObjMC3630.ai16Result[MC3630_Y], sObjMC3630.ai16Result[MC3630_Z], sObjMC3630.u8FIFOSample );
-			tsAccelEventData sAccelEvent = tsAccelEvent_GetEvent();
-			sObjMC3630.u8Event = sAccelEvent.eEvent;
-			V_PRINTF( LB"Event = %s", (sAccelEvent.eEvent == 1) ? "Move":((sAccelEvent.eEvent == 2)?"Tap":"None") );
-			V_PRINTF( LB"length = %d", sAccelEvent.u8PeakLength  );
-
-			u8count = 0;
-			ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_POWEROFF);
+			if( u8e == 0 || u8e == 0xFF ){
+				vMC3630_StartFIFO();
+				sObjMC3630.u8Event = 0xFF;
+				V_PRINTF(LB"One more");
+			}else{
+				vMC3630_StartSNIFF(2, 1);
+				sObjMC3630.u8Event = u8e;
+				u8before_event = sObjMC3630.u8Event;
+				V_PRINTF( LB"DICE : %d", sObjMC3630.u8Event);
+			}
 		}else{
-			bAccelEvent_SetData( sObjMC3630.ai16Result[MC3630_X], sObjMC3630.ai16Result[MC3630_Y], sObjMC3630.ai16Result[MC3630_Z], sObjMC3630.u8FIFOSample );
-			u8count++;
-			sObjMC3630.u8Event = ACCEL_EVENT_NOTANALYZED;
-			ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_POWEROFF);
+			vMC3630_StartSNIFF(2, 1);
+			sAccelEvent = tsAccelEvent_GetEvent();
+			V_PRINTF( LB"Event = %s", (sAccelEvent.eEvent == 1) ? "Shake":((sAccelEvent.eEvent == 2)?"Active":"None") );
+			V_PRINTF( LB"length = %d", sAccelEvent.u8PeakLength );
+			sObjMC3630.u8Event = sAccelEvent.eEvent<<3;
 		}
+
+		ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_POWEROFF);
 	}
 
 	// タイムアウト
@@ -137,7 +151,7 @@ PRSEV_HANDLER_DEF(E_STATE_APP_WAIT_POWEROFF, tsEvent *pEv, teEvent eEvent, uint3
 
 		vMC3630_ClearInterrupReg();
 		pEv->bKeepStateOnSetAll = FALSE; // スリープ復帰の状態を維持しない
-		ToCoNet_Event_SetState(pEv, E_STATE_IDLE); // スリープ状態へ遷移
+		//ToCoNet_Event_SetState(pEv, E_STATE_IDLE); // スリープ状態へ遷移
 	}
 }
 

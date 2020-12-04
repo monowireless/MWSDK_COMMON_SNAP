@@ -60,6 +60,7 @@
 #include "mwx_periph_wire.hpp"
 #include "mwx_periph_spi.hpp"
 #include "mwx_periph_pulse_counter.hpp"
+#include "mwx_periph_eeprom.hpp"
 
 // mwx C++ library (twesettings wrapper)
 #include "settings/mwx_settings.hpp"
@@ -67,6 +68,7 @@
 
 // mwx C++ parsing library
 #include "mwx_parser.hpp"
+#include "mwx_parser_pkt.hpp"
 
 // mwx C++ global defined instances (Serial, Timer?, ...)
 #include "mwx_common_instances.hpp"

@@ -13,12 +13,18 @@
 #include <initializer_list>
 
 #include "twecommon.h"
-#include "tweprintf.h"
 
 #include "mwx_common.hpp"
 #include "mwx_utils.hpp"
+
+#if !defined(TWE_STDINOUT_ONLY)
+#include "tweprintf.h"
 #include "mwx_periph.hpp"
 #include "mwx_debug.h"
+#else
+#include "_mwx_stdio.h"
+#include "printf.h"
+#endif
 
 // for print(xx, YY);
 #define DEC 10
@@ -30,6 +36,10 @@
 #define BIN 2
 
 namespace mwx { inline namespace L1 {
+	static const int MWX_SEEK_END = -1;
+	static const int MWX_SEEK_CUR = 1;
+	static const int MWX_SEEK_SET = 0;
+
     typedef void (*tfcOutput)(char character, void* arg);
 
 	class _printobj {
@@ -354,13 +364,15 @@ namespace mwx { inline namespace L1 {
 		size_t print(int8_t val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat);  }
 		size_t print(int16_t val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat); }
 		size_t print(int32_t val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat); }
-		size_t print(int val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat); }
 		size_t println(char val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat, true); }
 		size_t println(int8_t val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat, true); }
 		size_t println(int16_t val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat, true); }
 		size_t println(int32_t val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat, true); }
+#if !defined(TWE_STDINOUT_ONLY)
 		size_t println(int val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat, true); }
-
+		size_t print(int val, int nFormat = DEC) { return _print(_value_type_s(val), nFormat); }
+#endif
+		
 		size_t _print(const char *str) {
 			size_t ct = 0;
 			while(*str != 0) {
@@ -390,11 +402,13 @@ namespace mwx { inline namespace L1 {
 		size_t print(uint8_t val, int nFormat = DEC) { return _print(_value_type_u(val), nFormat); }
 		size_t print(uint16_t val, int nFormat = DEC) { return _print(_value_type_u(val), nFormat); }
 		size_t print(uint32_t val, int nFormat = DEC) { return _print(_value_type_u(val), nFormat); }
-		size_t print(unsigned val, int nFormat = DEC) { return _print(_value_type_u(val), nFormat); }
 		size_t println(uint8_t val, int nFormat = DEC) { return _print(_value_type_u(val), nFormat, true); }
 		size_t println(uint16_t val, int nFormat = DEC) { return _print(_value_type_u(val), nFormat, true); }
 		size_t println(uint32_t val, int nFormat = DEC) { return _print(_value_type_u(val), nFormat, true); }
+#if !defined(TWE_STDINOUT_ONLY)
+		size_t print(unsigned val, int nFormat = DEC) { return _print(_value_type_u(val), nFormat); }
 		size_t println(unsigned val, int nFormat = DEC) { return _print(_value_type_u(val), nFormat, true); }
+#endif
 
 		size_t print(double val, int fix = 2) {
 			char f[8] = "%.0f";
@@ -505,12 +519,12 @@ namespace mwx { inline namespace L1 {
 		}
 
 		inline D& operator << (int i) {
-			(size_t)fctprintf(get_pfcOutout(), pvOutputContext, "%d", i);
+			auto ret = fctprintf(get_pfcOutout(), pvOutputContext, "%d", i); (void)ret;
 			return *get_Derived();
 		}
 
 		inline D& operator << (double d) {
-			(size_t)fctprintf(get_pfcOutout(), pvOutputContext, "%.2f", d);
+			auto ret = fctprintf(get_pfcOutout(), pvOutputContext, "%.2f", d); (void)ret;
 			return *get_Derived();
 		}
 
@@ -729,4 +743,54 @@ namespace mwx { inline namespace L1 {
 		 */
 		inline tfcOutput get_pfcOutout() { return get_Derived()->vOutput; }
 	};
-}}
+
+	template <class T>
+	class _stream_helper_array_type {
+	protected:
+		T* _ref;
+		int _idx_rw;
+
+	public:
+		// _stream_helper_array_type() : _ref(nullptr), _idx_rw(0) {}
+
+		// normal constructor
+		_stream_helper_array_type(T& ref) : _ref(&ref), _idx_rw(0) {}
+		// move constructor
+		_stream_helper_array_type(_stream_helper_array_type&& ref) : _ref(ref._ref), _idx_rw(ref._idx_rw) {}
+
+		/**
+		 * @brief rewind the read index to the head.
+		 */
+		inline void rewind() { _idx_rw = 0; }
+
+		/**
+		 * @brief set the position.
+		 */
+		inline int seek(int offset, int whence = MWX_SEEK_SET) { 
+			switch (whence) {
+				case MWX_SEEK_END: _idx_rw = _ref->size() + offset; break;
+				case MWX_SEEK_CUR: _idx_rw += offset; break;
+				case MWX_SEEK_SET:
+				default:
+					_idx_rw = offset;
+			}
+			if (_idx_rw < 0) _idx_rw = 0;
+			if (_idx_rw > _ref->size()) _idx_rw = _ref->size();
+			return tell();
+		}
+
+		/**
+		 * @brief get the position.
+		 */
+		inline int tell() { return _idx_rw >= _ref->size() ? -1 : _idx_rw; }
+
+		/**
+		 * @brief check if there is remaining buffer to read.
+		 * 
+		 * @return int 0:no data 1:there is data to read
+		 */
+		inline int available() {
+			return (_idx_rw < _ref->size());
+		}
+	};
+}} // L1 // mwx

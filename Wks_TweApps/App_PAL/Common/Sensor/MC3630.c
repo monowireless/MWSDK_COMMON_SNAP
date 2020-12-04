@@ -272,6 +272,24 @@ PUBLIC void vMC3630_Sleep()
 	vSPIWrite8(CS_DIO19, MC3630_MODE_C|MC3630_WRITE, 0x01);
 }
 
+PUBLIC void vMC3630_Powerdown()
+{
+	vSPIWrite8(CS_DIO19, MC3630_INIT_1|MC3630_WRITE, 0x42);
+	vSPIWrite8(CS_DIO19, MC3630_MODE_C|MC3630_WRITE, 0x00);
+}
+
+
+PUBLIC bool_t bMC3630_IsActive()
+{
+	uint8 u8Active = u8SPIRead8(CS_DIO19, MC3630_MODE_C|MC3630_READ);
+	u8Active = u8Active&0x07;
+
+	if( u8Active > 1 ){
+		return TRUE;
+	}
+	return FALSE;
+}
+
 PUBLIC void vMC3630_SniffThreshold( uint8 u8axis, uint8 u8value )
 {
 	// 今書かれているレジスタを読み込んでおく

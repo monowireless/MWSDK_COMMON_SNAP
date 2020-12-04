@@ -4,10 +4,15 @@
 
 #include <jendefs.h>
 
+#ifdef USE_CUE
+#include "App_CUE.h"
+#else
+#include "EndDevice.h"
+#endif
+
 #include "utils.h"
 #include "ccitt8.h"
 #include "Interactive.h"
-#include "EndDevice.h"
 #include "sensor_driver.h"
 #include "MC3630.h"
 #include "accel_event.h"
@@ -143,6 +148,7 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 
 		if( !IS_OPT_DISABLE_ACCELEROMETER() ){
 			sObjMC3630.u8Interrupt = u8MC3630_ReadInterrupt();
+			V_PRINTF(LB"Int:%02X", sObjMC3630.u8Interrupt);
 			bool_t bSnsInt = bPortRead( SNS_INT );
 
 			// 割り込みピンがLoまたはイベントレジスタのフラグが立っていれば割り込み起床として扱う
@@ -201,7 +207,7 @@ PRSEV_HANDLER_DEF(E_STATE_APP_BLINK_LED, tsEvent *pEv, teEvent eEvent, uint32 u3
 			V_PRINTF(LB "*** MC3630 Setting...");
 
 			sObjMC3630.u8SampleFreq = MC3630_SAMPLING100HZ;
-			bool_t bOk = bMC3630_reset( sObjMC3630.u8SampleFreq, MC3630_RANGE16G, 30 );
+			bool_t bOk = bMC3630_reset( sObjMC3630.u8SampleFreq, MC3630_RANGE16G, 10 );
 			if(bOk == FALSE){
 				V_PRINTF(LB "Access failed.");
 				ToCoNet_Event_SetState(pEv, E_STATE_APP_SLEEP); // スリープ状態へ遷移

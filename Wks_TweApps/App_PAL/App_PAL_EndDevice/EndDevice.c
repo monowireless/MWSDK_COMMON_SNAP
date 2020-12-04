@@ -16,7 +16,11 @@
 #include "ccitt8.h"
 #include "Interrupt.h"
 
+#ifdef USE_CUE
+#include "App_CUE.h"
+#else
 #include "EndDevice.h"
+#endif
 
 #include "utils.h"
 
@@ -77,6 +81,10 @@ uint8 u8PowerUp;
 
 void *pvProcessEv;
 void *pvProcessEv_Sub;
+#ifdef USE_CUE
+tsCbHandler *psCbHandler_OTA = NULL;
+void *pvProcessEv_OTA;
+#endif
 void (*pf_cbProcessSerialCmd)(tsSerCmd_Context *);
 
 /****************************************************************************/
@@ -147,7 +155,13 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 		vInitHardware(FALSE);
 
 		// IDが初期値ならDIPスイッチの値を使用する
+#ifdef USE_CUE
+		sAppData.u8LID = (sAppData.sFlash.sData.u8id==0) ? 1:sAppData.sFlash.sData.u8id;
+#else
 		sAppData.u8LID = (sAppData.sFlash.sData.u8id==0) ? ((sAppData.u8DIPSW&0x07)+1+(sAppData.u8DIPSW&0x08?0x80:0)):sAppData.sFlash.sData.u8id+(sAppData.u8DIPSW&0x08?0x80:0);
+#endif
+
+		sAppData.u8LID = sAppData.u8LID | (IS_APPCONF_OPT_TO_NOTICE()?0x80:0x00);
 
 		// Sleep時間の計算(割り算は遅いので、要検討)
 		sAppData.u32Sleep_min = sAppData.sFlash.sData.u32Slp/60;
@@ -155,11 +169,25 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 
 		if ( sAppData.bConfigMode ) {
 			// 設定モードで起動
+#ifdef USE_CUE
+			sToCoNet_AppContext.u32AppId = APP_ID_OTA;
+			sToCoNet_AppContext.u8Channel = CHANNEL_OTA;
+			sToCoNet_AppContext.bRxOnIdle = TRUE;
+#ifdef OTA
+			sToCoNet_AppContext.u16ShortAddress = SHORTADDR_OTA;
+			vInitAppConfigMaster();
+#else
+			vInitAppCUEConfig();
+#endif
+
+#else
 			vInitAppConfig();
+#endif
 
 			// インタラクティブモードの初期化
 			Interactive_vInit();
 		} else
+#ifndef USE_CUE
 		// 何も刺さっていない
 		if ( sAppData.u8SnsID == PKT_ID_NOCONNECT) {
 			// 通常アプリで起動
@@ -198,7 +226,8 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 			// ADC の初期化
 			vInitADC();
 
-			if( sAppData.sFlash.sData.u32param&0x00010000 ){
+			if( IS_APPCONF_OPT_EVENTMODE() ||
+				IS_APPCONF_OPT_DICEMODE() ){
 				vInitAppMOT_Event();
 			}else{
 				vInitAppMOT();
@@ -212,11 +241,45 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 			vInitADC();
 			vInitAppLED();
 		}else
-	    {
+#else
+#ifndef OTA
+		if ( sAppData.u8SnsID == PKT_ID_CUE) {
+			sToCoNet_AppContext.u8MacInitPending = TRUE; // 起動時の MAC 初期化を省略する(送信する時に初期化する)
+			sToCoNet_AppContext.bSkipBootCalib = FALSE; // 起動時のキャリブレーションを行う
+
+			// ADC の初期化
+			vInitADC();
+
+			if( IS_APPCONF_OPT_EVENTMODE() ||
+				IS_APPCONF_OPT_DICEMODE() ){
+				vInitAppMOT_Event();
+			}else if( IS_APPCONF_OPT_FIFOMODE() ){
+				vInitAppMOT();
+			}else if( IS_APPCONF_OPT_MAGMODE() ){
+				vInitAppMAG();
+			}else{
+				vInitAppCUE();
+			}
+		} else
+#endif
+#endif
+		{
 			;
 		} // 終端の else 節
 
 		// イベント処理関数の登録
+#ifdef USE_CUE
+#ifndef OTA
+		if( !IS_APPCONF_OPT_DISABLE_OTA() ){
+			A_PRINTF(LB"! OTA INIT");
+			vInitAppOTA();
+			vInitOTAParam( 5, 100, 750 );
+			if(pvProcessEv_OTA){
+				ToCoNet_Event_Register_State_Machine(pvProcessEv_OTA);
+			}
+		}
+#endif
+#endif
 		if (pvProcessEv) {
 			ToCoNet_Event_Register_State_Machine(pvProcessEv);
 		}
@@ -240,11 +303,12 @@ void cbAppWarmStart(bool_t bAfterAhiInit) {
 		//  to check interrupt source, etc.
 
 		sAppData.bWakeupByButton = FALSE;
-		uint32 u32WakeStatus = u32AHI_DioWakeStatus();
+		sAppData.u32WakeupDIOStatus = u32AHI_DioWakeStatus();
 		sAppData.u8WakeupByTimer = u8AHI_WakeTimerFiredStatus();
+		sAppData.u32DIO_startup = (~u32AHI_DioReadInput())&0x1FFFFF;
 //		if( u8AHI_WakeTimerFiredStatus() ){
 //		} else
-		if( u32WakeStatus & u32DioPortWakeUp ) {
+		if( sAppData.u32WakeupDIOStatus & u32DioPortWakeUp ) {
 			// woke up from DIO events
 			sAppData.bWakeupByButton = TRUE;
 		}
@@ -288,6 +352,11 @@ void cbToCoNet_vMain(void) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vMain) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vMain)();
 	}
+#ifdef USE_CUE
+	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vMain) {
+		(*psCbHandler_OTA->pf_cbToCoNet_vMain)();
+	}
+#endif
 }
 
 /**
@@ -301,6 +370,11 @@ void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vRxEvent) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vRxEvent)(pRx);
 	}
+#ifdef USE_CUE
+	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vRxEvent) {
+		(*psCbHandler_OTA->pf_cbToCoNet_vRxEvent)(pRx);
+	}
+#endif
 }
 
 /**
@@ -323,6 +397,11 @@ void cbToCoNet_vTxEvent(uint8 u8CbId, uint8 bStatus) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vTxEvent) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vTxEvent)(u8CbId, bStatus);
 	}
+#ifdef USE_CUE
+	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vTxEvent) {
+		(*psCbHandler_OTA->pf_cbToCoNet_vTxEvent)(u8CbId, bStatus);
+	}
+#endif
 
 	return;
 }
@@ -339,6 +418,11 @@ void cbToCoNet_vNwkEvent(teEvent eEvent, uint32 u32arg) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vNwkEvent) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vNwkEvent)(eEvent, u32arg);
 	}
+#ifdef USE_CUE
+	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vNwkEvent) {
+		(*psCbHandler_OTA->pf_cbToCoNet_vNwkEvent)(eEvent, u32arg);
+	}
+#endif
 }
 
 /**
@@ -359,6 +443,11 @@ void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vHwEvent) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vHwEvent)(u32DeviceId, u32ItemBitmap);
 	}
+#ifdef USE_CUE
+	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vHwEvent) {
+		(*psCbHandler_OTA->pf_cbToCoNet_vHwEvent)(u32DeviceId, u32ItemBitmap);
+	}
+#endif
 }
 
 /**
@@ -372,6 +461,11 @@ uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_u8HwInt) {
 		bRet = (*psCbHandler_Sub->pf_cbToCoNet_u8HwInt)(u32DeviceId, u32ItemBitmap);
 	}
+#ifdef USE_CUE
+	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_u8HwInt) {
+		bRet = (*psCbHandler_OTA->pf_cbToCoNet_u8HwInt)(u32DeviceId, u32ItemBitmap);
+	}
+#endif
 	return bRet;
 }
 
@@ -472,6 +566,11 @@ static void vInitHardware(int f_warm_start)
 	// SMBUS の初期化
 	vSMBusInit();
 
+#ifdef USE_CUE
+	sAppData.u8SnsID = PKT_ID_CUE;
+	sPALData.u8PALModel = PKT_ID_CUE;
+	sPALData.u8PALVersion = 1;
+#else
 	if(!f_warm_start || sAppData.u8SnsID == 0){
 		if(bGetPALOptions()){
 			sAppData.u8SnsID = sPALData.u8PALModel;
@@ -484,10 +583,29 @@ static void vInitHardware(int f_warm_start)
 			sAppData.u8SnsID = PKT_ID_NOCONNECT;
 		}
 	}
+#endif
 
+#ifdef OTA
+	vPortSetLo(PORT_OUT4);		//	WD
+	vPortAsOutput(PORT_OUT4);		//	WD
+	vPortDisablePullup(PORT_OUT4);	//	WD
+	vPortAsOutput(PORT_INPUT3);		//	WD_ENB
+
+	// MONOSTICK を想定する
+	vPortAsOutput(PORT_OUT1);
+	vAHI_DoSetDataOut(2, 0);
+	bAHI_DoEnableOutputs(TRUE); // MISO を出力用に
+
+	// 設定モードとして起動
+	sAppData.bConfigMode = TRUE;
+#else
 	// WDTのための出力変化
 	vPortSetHi(WDT_OUT);
 	if(!f_warm_start){
+		// WakeTimer1をTWELITEのグローバル時間カウント用にする
+		vAHI_WakeTimerEnable(E_AHI_WAKE_TIMER_1, FALSE);	// 割り込み無効
+		vAHI_WakeTimerStartLarge( E_AHI_WAKE_TIMER_1, 0ULL );
+
 		// WDTを制御するポートの初期化
 		vPortDisablePullup(WDT_OUT);
 		vPortAsOutput(WDT_OUT);
@@ -498,12 +616,16 @@ static void vInitHardware(int f_warm_start)
 		vPortAsOutput(OUTPUT_LED);
 
 		vPortAsInput(INPUT_SWSET);
+#ifdef USE_CUE
+		if( bPortRead(INPUT_SWSET) || (u8PowerUp == 0x00 && !IS_APPCONF_OPT_DISABLE_OTA()) ){
+#else
 		if( bPortRead(INPUT_SWSET) ){
+#endif
 			// 設定モードとして起動
 			sAppData.bConfigMode = TRUE;
 		}
 
-		if( sAppData.u8SnsID != PKT_ID_NOCONNECT ){
+		if( sAppData.u8SnsID != PKT_ID_NOCONNECT || sAppData.u8SnsID != PKT_ID_CUE ){
 			// DIPSWの読み込み
 			vPortAsInput(INPUT_DIP1);
 			if(bPortRead(INPUT_DIP1)){
@@ -570,12 +692,24 @@ static void vInitHardware(int f_warm_start)
 				vPortAsInput(SNS_INT);
 				u32DioPortWakeUp |= (1UL<<SNS_INT);
 				break;
+			case PKT_ID_CUE:
+				vPortDisablePullup(SNS_INT);
+				vPortAsInput(SNS_INT);
+				u32DioPortWakeUp |= (1UL<<SNS_INT);
+
+				vPortDisablePullup(SNS_EN);
+				vPortAsInput(SNS_EN);
+				u32DioPortWakeUp |= (1UL<<SNS_EN);
+
+				vPortDisablePullup(INPUT_PC);
+				vPortAsInput(INPUT_PC);
+				u32DioPortWakeUp |= (1UL<<INPUT_PC);
 
 			default:
 				break;
 		}
-
 	}
+#endif
 }
 
 /** @ingroup MASTER
@@ -608,7 +742,7 @@ void vSerialInit(uint32 u32Baud, tsUartOpt *pUartOpt) {
  * 初期化メッセージ
  */
 void vSerInitMessage() {
-	A_PRINTF(LB LB"!INF MONO WIRELESS APP_PAL(EndDevice) V%d-%02d-%d", VERSION_MAIN, VERSION_SUB, VERSION_VAR);
+	A_PRINTF(LB LB"!INF MONO WIRELESS %s V%d-%02d-%d", APP_NAME, VERSION_MAIN, VERSION_SUB, VERSION_VAR);
 	A_FLUSH();
 	A_PRINTF(LB"!INF AID:%08x,SID:%08x,LID:%02x,PID:%02x",
 			sToCoNet_AppContext.u32AppId, ToCoNet_u32GetSerial(), sAppData.u8LID, sPALData.u8PALModel);

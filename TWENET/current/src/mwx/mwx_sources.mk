@@ -6,8 +6,10 @@ APPSRC_CXX+=mwx_periph.cpp
 APPSRC_CXX+=mwx_periph_dio.cpp
 APPSRC_CXX+=mwx_periph_buttons.cpp
 APPSRC_CXX+=mwx_periph_analogue.cpp
+APPSRC_CXX+=mwx_periph_eeprom.cpp
 APPSRC_CXX+=mwx_stream.cpp
 APPSRC_CXX+=mwx_duplicate_checker.cpp
+APPSRC_CXX+=mwx_parser_pkt.cpp
 
 APPSRC_CXX+=settings/mwx_settings.cpp
 APPSRC_CXX+=settings/mwx_stgs_standard.cpp
@@ -20,6 +22,7 @@ APPSRC_CXX+=boards/mwx_brd_pal_mag.cpp
 APPSRC_CXX+=boards/mwx_brd_pal_notice.cpp
 APPSRC_CXX+=boards/mwx_brd_monostick.cpp
 APPSRC_CXX+=boards/mwx_brd_app_twelite.cpp
+APPSRC_CXX+=boards/mwx_brd_cue.cpp
 
 APPSRC_CXX+=networks/mwx_nwk_simple.cpp
 
