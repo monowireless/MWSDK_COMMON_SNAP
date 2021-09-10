@@ -54,12 +54,17 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 		// センサーがらみの変数の初期化
 		u8sns_cmplt = 0;
 
-		vADXL345_LowEnergy_Init( &sObjADXL345, &sSnsObj );
+//		vADXL345_LowEnergy_Init( &sObjADXL345, &sSnsObj );
+		vADXL345_FIFO_Init( &sObjADXL345, &sSnsObj );
 		if( bFirst ){
 			V_PRINTF(LB "*** ADXL345 LowEnergy Setting...");
 			bOk &= bADXL345reset();
-			bOk &= bADXL345_LowEnergy_Setting();
-			if(bOk) bFirst = FALSE;
+			tsADXL345Param param;
+			param.u16Duration = 200;
+			// 200Hz Sampling
+			bOk &= bADXL345_FIFO_Setting( 0, param );
+//			bOk &= bADXL345_LowEnergy_Setting();
+//			if(bOk) bFirst = FALSE;
 		}
 		vSnsObj_Process(&sSnsObj, E_ORDER_KICK);
 		if (bSnsObj_isComplete(&sSnsObj) || !bOk ) {
@@ -70,13 +75,24 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 			return;
 		}
 
+		if( bFirst || !sAppData.bWakeupByButton ){
+			bADXL345_StartMeasuring(0);
+			bFirst = FALSE;
+			ToCoNet_Event_SetState(pEv, E_STATE_APP_SLEEP); // スリープ状態へ遷移
+		}else{
+			if(sObjADXL345.u8Interrupt&0x02){
+				// ADC の取得
+				vADC_WaitInit();
+				vSnsObj_Process(&sAppData.sADC, E_ORDER_KICK);
 
-		// ADC の取得
-		vADC_WaitInit();
-		vSnsObj_Process(&sAppData.sADC, E_ORDER_KICK);
+				// RUNNING 状態
+				ToCoNet_Event_SetState(pEv, E_STATE_RUNNING);
+			}else{
+				bADXL345_StartMeasuring(0);
+				ToCoNet_Event_SetState(pEv, E_STATE_APP_SLEEP); // スリープ状態へ遷移
+			}
+		}
 
-		// RUNNING 状態
-		ToCoNet_Event_SetState(pEv, E_STATE_RUNNING);
 	} else {
 		V_PRINTF(LB "*** unexpected state.");
 		ToCoNet_Event_SetState(pEv, E_STATE_APP_SLEEP); // スリープ状態へ遷移
@@ -92,6 +108,7 @@ PRSEV_HANDLER_DEF(E_STATE_RUNNING, tsEvent *pEv, teEvent eEvent, uint32 u32evarg
 
 	// 送信処理に移行
 	if (u8sns_cmplt == E_SNS_ALL_CMP) {
+		bADXL345_EndMeasuring();
 		ToCoNet_Event_SetState(pEv, E_STATE_APP_WAIT_TX);
 	}
 
@@ -126,9 +143,12 @@ PRSEV_HANDLER_DEF(E_STATE_APP_WAIT_TX, tsEvent *pEv, teEvent eEvent, uint32 u32e
 		S_OCTET(sAppData.sSns.u8Batt);
 		S_BE_WORD(sAppData.sSns.u16Adc1);
 		S_BE_WORD(sAppData.sSns.u16Adc2);
-		S_BE_WORD(sObjADXL345.ai16Result[ADXL345_IDX_X]);
-		S_BE_WORD(sObjADXL345.ai16Result[ADXL345_IDX_Y]);
-		S_BE_WORD(sObjADXL345.ai16Result[ADXL345_IDX_Z]);
+//		S_BE_WORD(sObjADXL345.ai16Result[ADXL345_IDX_X]);
+//		S_BE_WORD(sObjADXL345.ai16Result[ADXL345_IDX_Y]);
+//		S_BE_WORD(sObjADXL345.ai16Result[ADXL345_IDX_Z]);
+		S_BE_WORD(sObjADXL345.ai16ResultX[9]/10);
+		S_BE_WORD(sObjADXL345.ai16ResultY[9]/10);
+		S_BE_WORD(sObjADXL345.ai16ResultZ[9]/10);
 		S_OCTET( 0xFE );
 
 		sAppData.u16frame_count++;
@@ -166,8 +186,18 @@ PRSEV_HANDLER_DEF(E_STATE_APP_SLEEP, tsEvent *pEv, teEvent eEvent, uint32 u32eva
 			ToCoNet_Nwk_bPause(sAppData.pContextNwk);
 		}
 
+		uint32 u32Sleep = 0;
+		if(sAppData.bWakeupByButton){
+			if( sAppData.sFlash.sData.u32Slp > 100 ){
+				// 200Hzで10サンプル計測するのでスリープ時間を50ms減らす
+				u32Sleep = sAppData.sFlash.sData.u32Slp-50;
+			}else{
+				u32Sleep = sAppData.sFlash.sData.u32Slp;
+			}
+		}
+
 		vAHI_DioWakeEnable(0, PORT_INPUT_MASK); // DISABLE DIO WAKE SOURCE
-		ToCoNet_vSleep( E_AHI_WAKE_TIMER_0, sAppData.sFlash.sData.u32Slp, sAppData.u16frame_count == 1 ? FALSE : TRUE, FALSE);
+		ToCoNet_vSleep( E_AHI_WAKE_TIMER_0, u32Sleep, sAppData.u16frame_count == 1 ? FALSE : TRUE, FALSE);
 	}
 }
 

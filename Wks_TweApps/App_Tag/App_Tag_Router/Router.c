@@ -374,6 +374,7 @@ void cbToCoNet_vNwkEvent(teEvent eEvent, uint32 u32arg) {
 		if (u32arg) {
 			tsRoutePktInfo *pInfo = (void*)u32arg;
 
+			A_PRINTF( LB"E_EVENT_TOCONET_NWK_ROUTE_PKT");
 			if (pInfo->bUpstream) {
 				sAppData.u32LedCt = 25;
 			}

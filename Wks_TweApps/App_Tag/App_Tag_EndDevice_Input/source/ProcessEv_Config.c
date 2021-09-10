@@ -84,7 +84,7 @@ PRSEV_HANDLER_DEF(E_STATE_WAIT_COMMAND, tsEvent *pEv, teEvent eEvent, uint32 u32
 	}
 
 	// 60ms 経過後はRx回路を停止させる（通常の入力コマンドインタフェースに移行
-	if (PRSEV_u32TickFrNewState(pEv) > 60 || ( u8Flags&0x02) != 0 ) {
+	if (PRSEV_u32TickFrNewState(pEv) > 60 || (u8Flags&0x02) != 0 ) {
 		// 通常モードへ戻る
 		if(( u8Flags&0x02) != 0 ){
 			ToCoNet_Event_SetState(pEv, E_STATE_RUNNING);

@@ -37,12 +37,21 @@ namespace mwx { inline namespace L1 {
 		void (*pf_on_event)(void* pObj, uint32_t ev, uint32_t& opt);
 
 	public:
+		static const uint32_t OPT_EV_ON_EARLY_WAKEUP = 0x00000001;
+		void set_opt_mask(uint32_t u32ev) { _u32_opt_event_mask = u32ev; }
+		uint32_t get_opt_mask() const { return _u32_opt_event_mask; }
+		
+	private:
+		uint32_t _u32_opt_event_mask;
+
+	public:
 		appdefs_virt() {
 			setup();
 		}
 
 		~appdefs_virt() {
-			if (p_body) delete p_body; // note: only delete memory block, not calling destructor of created object
+			// so far, not assuming deleting this object.
+			// if (p_body) delete p_body; // note: only delete memory block, not calling destructor of created object
 									   // but to call unuse<T> explicitly.
 		}
 
@@ -83,6 +92,8 @@ namespace mwx { inline namespace L1 {
 			pf_cbTweNet_vTxEvent = nullptr;
 
 			pf_on_event = nullptr;
+
+			_u32_opt_event_mask = 0;
 		}
 
 		inline void cbToCoNet_vMain(void) {

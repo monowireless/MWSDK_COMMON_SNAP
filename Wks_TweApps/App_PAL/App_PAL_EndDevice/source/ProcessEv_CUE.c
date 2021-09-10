@@ -63,17 +63,17 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 		// RC クロックのキャリブレーションを行う
 		ToCoNet_u16RcCalib(sAppData.sFlash.sData.u16RcClock);
 
+		// センサーがらみの変数の初期化
+		u8sns_cmplt = 0;
+		vMC3630_Init( &sObjMC3630, &sSnsObj );
+		sObjMC3630.u8SampleFreq = MC3630_SAMPLING100HZ;
+
 		// 定期送信するときはカウントが0の時と割り込み起床したときだけ送信する
 		if( sAppData.u32SleepCount != 0 && sAppData.bWakeupByButton == FALSE ){
 			V_PRINTF(LB"*** No Send...");
 			ToCoNet_Event_SetState(pEv, E_STATE_APP_SLEEP);
 			return;
 		}
-
-		// センサーがらみの変数の初期化
-		u8sns_cmplt = 0;
-		vMC3630_Init( &sObjMC3630, &sSnsObj );
-		sObjMC3630.u8SampleFreq = MC3630_SAMPLING100HZ;
 
 		if( bFirst ){
 			bFirst = FALSE;
@@ -161,7 +161,11 @@ PRSEV_HANDLER_DEF(E_STATE_APP_BLINK_LED, tsEvent *pEv, teEvent eEvent, uint32 u3
 		V_PRINTF( LB"HALL : %d, %c", DI_Bitmap, bInverse?'t':'f' );
 
 		//vMC3630_Sleep();
-		vMC3630_StartSNIFF( 2, 1 );
+		if( IS_APPCONF_OPT_LOOSE_TH() ){
+			vMC3630_StartSNIFF( 2, 1 );
+		}else{
+			vMC3630_StartSNIFF( 3, 1 );
+		}
 
 		sAppData.u8LedState = 0;
 		LED_OFF();
@@ -192,7 +196,11 @@ PRSEV_HANDLER_DEF(E_STATE_RUNNING, tsEvent *pEv, teEvent eEvent, uint32 u32evarg
 
 	// 送信処理に移行
 	if (u8sns_cmplt == E_SNS_ALL_CMP) {
-		vMC3630_StartSNIFF( 2, 1 );
+		if( IS_APPCONF_OPT_LOOSE_TH() ){
+			vMC3630_StartSNIFF( 2, 1 );
+		}else{
+			vMC3630_StartSNIFF( 3, 1 );
+		}
 		vAccelEvent_Init(100);
 		bAccelEvent_SetData( sObjMC3630.ai16Result[MC3630_X], sObjMC3630.ai16Result[MC3630_Y], sObjMC3630.ai16Result[MC3630_Z], sObjMC3630.u8FIFOSample );
 		sObjMC3630.u8Event = u8AccelEvent_Top();
@@ -291,6 +299,8 @@ PRSEV_HANDLER_DEF(E_STATE_APP_SLEEP, tsEvent *pEv, teEvent eEvent, uint32 u32eva
 				vAHI_DioWakeEdge( 0, u32DioPortWakeUp ); // 割り込みエッジ（立上がりに設定）
 			}
 		}
+
+		vMC3630_ClearInterrupReg();
 
 		vSleep(u32Sleep, sAppData.u16frame_count == 1 ? FALSE : TRUE, FALSE);
 	}

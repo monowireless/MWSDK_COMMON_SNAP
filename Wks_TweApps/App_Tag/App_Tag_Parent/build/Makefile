@@ -65,6 +65,12 @@ endif
 
 ### optimize flag (default is -Os, normally no need to change)
 #OPTFLAG=-O2
+
+### TWELITE NET debug build
+# TWELITE NET のスタックデバッグ出力を使用する場合 1 を指定します。
+# - ターゲットファイル名に _TDBG が追加されます。 
+#
+#TOCONET_DEBUG ?= 1
  
 #####################################################################
 ### set MWSDK install path and include makefile.

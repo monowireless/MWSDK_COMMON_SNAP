@@ -25,8 +25,9 @@ else
   else
     VERSION_MAIN = 1
     VERSION_SUB  = 3
-    VERSION_VAR  = 3
+    VERSION_VAR  = 4
 
+    # 1.3.4 CUEモードで60秒以上スリープとリセットがかかる点を修正。
     # 1.3.3 MC3630のイベント検出の閾値を厳しくし、元のパラメータに設定できるようにした。
     # 1.3.1 ホールIC起点でOTAする機能を実装(CUEのみ)
     # 1.3.0 CUEに対応

@@ -297,6 +297,12 @@ extern "C" void cbAppWarmStart(bool_t bAfterAhiInit)
 		u8TimerWakeUp = u8AHI_WakeTimerFiredStatus(); //  E_AHI_WAKE_TIMER_MASK_0 or  E_AHI_WAKE_TIMER_MASK_1
 	}
 	else {
+		// call the event at the very initial (only for board support, if option is set.)
+		uint32_t vapp_opt = mwx::appdefs_virt::OPT_EV_ON_EARLY_WAKEUP;
+		if (the_vhw && (the_vhw.get_opt_mask() & mwx::appdefs_virt::OPT_EV_ON_EARLY_WAKEUP)) {
+			the_vhw.on_event(_MWX_EV_ON_WAKEUP, vapp_opt);
+		}
+
 		// Serial should be re-initialize firstly.
 		Serial._on_wakeup();
 		Serial1._on_wakeup();
@@ -305,9 +311,15 @@ extern "C" void cbAppWarmStart(bool_t bAfterAhiInit)
 		_MWX_vOnWakeup();
 
 		// generate net/hw/app wakeup events
-		uint32_t vapp_opt = 0;
+		vapp_opt = 0;
 		for (auto x: _vcbs) {
-			if(*x) x->on_event(_MWX_EV_ON_WAKEUP, vapp_opt);
+			if(*x) {
+				if (x == &the_vhw && (x->get_opt_mask() & mwx::appdefs_virt::OPT_EV_ON_EARLY_WAKEUP)) {
+					; // already done
+				} else {
+					x->on_event(_MWX_EV_ON_WAKEUP, vapp_opt);
+				}
+			}
 		}
 
         // call back procedure for waking up.
@@ -377,8 +389,15 @@ extern "C" void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
 			the_vapp.cbToCoNet_vRxEvent(rx);
 		}
 		else {
+			bool_t b_handled = true; // default, handled
+
+			// call defailt function
+			on_rx_packet(rx, b_handled);
+
 			// if app is not defined, use receiver instead.
-			the_twelite.receiver._push(rx);
+			if (!b_handled) {
+				the_twelite.receiver._push(rx);
+			}
 		}
 
 		if (the_vhw) { the_vhw.cbToCoNet_vRxEvent(rx); }
@@ -402,7 +421,11 @@ extern "C" void cbToCoNet_vTxEvent(uint8 u8CbId, uint8 bStatus) {
 		the_vnet.cbToCoNet_vTxEvent(ev);
 	}
 
+	// if the network layer does not handle the event, put TX event to other parts.
 	if (!ev._network_handled) {
+		bool_t b_handled = true;
+		on_tx_comp(ev, b_handled);
+		
 		if (the_vapp) the_vapp.cbToCoNet_vTxEvent(ev);
 		if (the_vhw) the_vhw.cbToCoNet_vTxEvent(ev);
 		if (the_vsettings) { the_vsettings.cbToCoNet_vTxEvent(ev); }
@@ -561,7 +584,6 @@ void _MWX_vOnWakeup() {
 	Buttons._on_wakeup();
 }
 
-
 /**
  * @brief support function for printf_()
  * 
@@ -570,6 +592,15 @@ void _MWX_vOnWakeup() {
 void _putchar(char c) {
 	Serial << c;
 }
+
+/****************************************************************************/
+/***        OTEHR CALL BACKS                                             ***/
+/****************************************************************************/
+extern void on_rx_packet(mwx::packet_rx& pkt, bool_t &b_handled) __attribute__((weak));
+void on_rx_packet(mwx::packet_rx& pkt, bool_t &b_handled) { b_handled = false; }
+
+extern void on_tx_comp(mwx::packet_ev_tx& ev, bool_t &handled) __attribute__((weak));
+void on_tx_comp(mwx::packet_ev_tx& ev, bool_t &b_handled) { b_handled = false; }
 
 /****************************************************************************/
 /***        END OF FILE                                                   ***/

@@ -63,17 +63,17 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 		// RC クロックのキャリブレーションを行う
 		ToCoNet_u16RcCalib(sAppData.sFlash.sData.u16RcClock);
 
+		// センサーがらみの変数の初期化
+		u8sns_cmplt = 0;
+		vMC3630_Init( &sObjMC3630, &sSnsObj );
+		sObjMC3630.u8SampleFreq = MC3630_SAMPLING100HZ;
+
 		// 定期送信するときはカウントが0の時と割り込み起床したときだけ送信する
 		if( sAppData.u32SleepCount != 0 && sAppData.bWakeupByButton == FALSE ){
 			V_PRINTF(LB"*** No Send...");
 			ToCoNet_Event_SetState(pEv, E_STATE_APP_SLEEP);
 			return;
 		}
-
-		// センサーがらみの変数の初期化
-		u8sns_cmplt = 0;
-		vMC3630_Init( &sObjMC3630, &sSnsObj );
-		sObjMC3630.u8SampleFreq = MC3630_SAMPLING100HZ;
 
 		if( bFirst ){
 			bFirst = FALSE;

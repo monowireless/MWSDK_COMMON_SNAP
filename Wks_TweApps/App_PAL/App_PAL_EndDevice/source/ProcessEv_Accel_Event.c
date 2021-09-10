@@ -89,7 +89,11 @@ PRSEV_HANDLER_DEF(E_STATE_APP_WAIT_SNS_INIT, tsEvent *pEv, teEvent eEvent, uint3
 			return;
 		}else{
 			if( IS_APPCONF_OPT_EVENTMODE() ){
-				vMC3630_StartSNIFF( 2, 1 );
+				if( IS_APPCONF_OPT_LOOSE_TH() ){
+					vMC3630_StartSNIFF( 2, 1 );
+				}else{
+					vMC3630_StartSNIFF( 3, 1 );
+				}
 			}
 		}
 	}
@@ -119,13 +123,21 @@ PRSEV_HANDLER_DEF(E_STATE_RUNNING, tsEvent *pEv, teEvent eEvent, uint32 u32evarg
 				sObjMC3630.u8Event = 0xFF;
 				V_PRINTF(LB"One more");
 			}else{
-				vMC3630_StartSNIFF(2, 1);
+				if( IS_APPCONF_OPT_LOOSE_TH() ){
+					vMC3630_StartSNIFF( 2, 1 );
+				}else{
+					vMC3630_StartSNIFF( 3, 1 );
+				}
 				sObjMC3630.u8Event = u8e;
 				u8before_event = sObjMC3630.u8Event;
 				V_PRINTF( LB"DICE : %d", sObjMC3630.u8Event);
 			}
 		}else{
-			vMC3630_StartSNIFF(2, 1);
+			if( IS_APPCONF_OPT_LOOSE_TH() ){
+				vMC3630_StartSNIFF( 2, 1 );
+			}else{
+				vMC3630_StartSNIFF( 3, 1 );
+			}
 			sAccelEvent = tsAccelEvent_GetEvent();
 			V_PRINTF( LB"Event = %s", (sAccelEvent.eEvent == 1) ? "Shake":((sAccelEvent.eEvent == 2)?"Active":"None") );
 			V_PRINTF( LB"length = %d", sAccelEvent.u8PeakLength );

@@ -17,6 +17,8 @@
 
 #include "networks/mwx_networks.hpp"
 
+#include "settings/mwx_stgs_standard.hpp"
+
 extern "C" uint32_t u32DioPortWakeUp; //! Wake Up Port 
 extern "C" uint8_t u8TimerWakeUp; //! Wake Up by Timer
 extern "C" tsFILE _sSerLegacy;
@@ -64,7 +66,8 @@ namespace mwx { inline namespace L1 {
 				
 				_the_instance = *p;
 				p->on_create(opt);
-
+				_the_instance.set_opt_mask(opt); // also passed option data to the instance.
+				
 				return *p;
 			} else {
 				MWX_Panic(2, "TIM::use() new instance can add only at setup().");
@@ -196,6 +199,21 @@ namespace mwx { inline namespace L1 {
 		twenet& operator << (T&& setobj) {
 			static_assert(std::is_base_of<mwx::twenet::setting, T>::value == true, "use setting objecct derived from twenet::setting");
 			setobj.set(_setup_finished); // if nochange flag is set, it's not changed anymore.
+			return *this;
+		}
+
+		// apply interactive mode settings directly.
+		twenet& operator << (mwx::StgsStandard& set) {
+			sToCoNet_AppContext.u32AppId = set.u32appid();
+			if (!set.is_hidden(E_STGSTD_SETID::CHANNEL)) {
+				sToCoNet_AppContext.u8Channel = set.u8ch();
+			} else {
+				sToCoNet_AppContext.u32ChMask = set.u32chmask();
+			}
+			if (!set.is_hidden(E_STGSTD_SETID::POWER_N_RETRY)) {
+				sToCoNet_AppContext.u8TxPower = set.u8power();
+				sToCoNet_AppContext.u8TxMacRetry = set.u8retry();
+			}
 			return *this;
 		}
 

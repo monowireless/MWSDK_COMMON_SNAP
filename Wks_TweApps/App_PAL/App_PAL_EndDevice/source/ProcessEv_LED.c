@@ -223,7 +223,11 @@ PRSEV_HANDLER_DEF(E_STATE_APP_BLINK_LED, tsEvent *pEv, teEvent eEvent, uint32 u3
 	if (ToCoNet_Event_u32TickFrNewState(pEv) > 750) {
 		if( !IS_OPT_DISABLE_ACCELEROMETER() ){
 			V_PRINTF(LB "*** MC3630 First Sleep ");
-			vMC3630_StartSNIFF( 2, 1 );
+			if( IS_APPCONF_OPT_LOOSE_TH() ){
+				vMC3630_StartSNIFF( 2, 1 );
+			}else{
+				vMC3630_StartSNIFF( 3, 1 );
+			}
 		}
 		sAppData.u8LedState = 0;
 		LED_OFF();
@@ -266,7 +270,11 @@ PRSEV_HANDLER_DEF(E_STATE_RUNNING, tsEvent *pEv, teEvent eEvent, uint32 u32evarg
 				ToCoNet_Event_SetState(pEv, E_STATE_APP_SLEEP);
 				return;
 			}else{
-				vMC3630_StartSNIFF(2, 1);
+				if( IS_APPCONF_OPT_LOOSE_TH() ){
+					vMC3630_StartSNIFF( 2, 1 );
+				}else{
+					vMC3630_StartSNIFF( 3, 1 );
+				}
 				sObjMC3630.u8Event = u8e;
 				u8Event_before = sObjMC3630.u8Event;
 				sLEDParam = asLEDEventParam[sObjMC3630.u8Event];
@@ -302,7 +310,11 @@ PRSEV_HANDLER_DEF(E_STATE_RUNNING, tsEvent *pEv, teEvent eEvent, uint32 u32evarg
 					ToCoNet_Event_SetState(pEv, E_STATE_APP_SLEEP);
 					break;
 				case 1:
-					vMC3630_StartSNIFF(2, 1);
+					if( IS_APPCONF_OPT_LOOSE_TH() ){
+						vMC3630_StartSNIFF( 2, 1 );
+					}else{
+						vMC3630_StartSNIFF( 3, 1 );
+					}
 
 					vAccelEvent_Init( 100 );
 					bAccelEvent_SetData( sObjMC3630.ai16Result[MC3630_X], sObjMC3630.ai16Result[MC3630_Y], sObjMC3630.ai16Result[MC3630_Z], sObjMC3630.u8FIFOSample );

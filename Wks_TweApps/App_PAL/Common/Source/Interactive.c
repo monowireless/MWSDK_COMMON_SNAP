@@ -237,6 +237,7 @@ void vHandleSerialInput() {
 				continue;
 			}
 
+#if 0
 			{
 				// コマンド書式の系列解釈、および verbose モードの判定
 				uint8 u8res;
@@ -264,7 +265,7 @@ void vHandleSerialInput() {
 					; // コマンド解釈モードではない
 				}
 			}
-
+#endif
 			// Verbose モードのときは、シングルコマンドを取り扱う
 			if (sSerCmd_P3.bverbose) {
 				// コマンドの解釈

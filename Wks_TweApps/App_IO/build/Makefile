@@ -15,7 +15,7 @@ TWELITE ?= BLUE
 ### set application version (MUST SET THIS.)
 VERSION_MAIN = 1
 VERSION_SUB  = 3
-VERSION_VAR  = 1
+VERSION_VAR  = 2
 
 #####################################################################
 ### set an additional source file
@@ -34,7 +34,7 @@ APPSRC += Pairing.c
 ### Additional Src/Include Path
 # if set, find source files from given dirs.
 #
-APP_COMMON_SRC_DIR_ADD1 = ../source
+APP_COMMON_SRC_DIR_ADD1 = ../Common
 #APP_COMMON_SRC_DIR_ADD2 = 
 #APP_COMMON_SRC_DIR_ADD3 = 
 #APP_COMMON_SRC_DIR_ADD4 =

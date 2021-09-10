@@ -226,7 +226,7 @@ vfPrintf(&sDebugStream, "\n\rSHT_ST:%d", pObj->u8IdxMeasuruing);
 #endif
 
 			pObj->ai32Result[pObj->u8IdxMeasuruing] = SENSOR_TAG_DATA_ERROR;
-			pObj->u8TickWait = 0;
+			pObj->u8TickWait = 5;
 
 			// kick I2C communication
 			if (!bMAX31855startRead(0)) {

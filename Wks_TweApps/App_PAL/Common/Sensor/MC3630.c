@@ -10,6 +10,8 @@
 #include "string.h"
 #include "fprintf.h"
 
+#include "twesysutils.h"
+
 #include "sensor_driver.h"
 #include "MC3630.h"
 #include "SPI.h"
@@ -102,7 +104,8 @@ PUBLIC bool_t bMC3630_reset( uint8 Freq, uint8 Range, uint8 SplNum )
 	// ここからおまじない
 	vSPIWrite8(CS_DIO19, 0x1B|MC3630_WRITE, 0x00);
 	// Wait
-	vWait(5000);
+	TWESYSUTL_vWaitPollMicro(2500);
+	//vWait(5000);
 
 	vSPIWrite8(CS_DIO19, MC3630_STATUS_2|MC3630_WRITE, 0x00);
 	vSPIWrite8(CS_DIO19, MC3630_INIT_1|MC3630_WRITE, 0x42);

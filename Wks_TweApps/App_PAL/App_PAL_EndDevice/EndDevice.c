@@ -363,7 +363,9 @@ void cbToCoNet_vMain(void) {
  * 受信処理
  */
 void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
+#ifndef OTA
 	V_PRINTF(LB ">>> Rx tick=%d <<<", u32TickCount_ms & 0xFFFF);
+#endif
 	if (psCbHandler && psCbHandler->pf_cbToCoNet_vRxEvent) {
 		(*psCbHandler->pf_cbToCoNet_vRxEvent)(pRx);
 	}
@@ -381,12 +383,13 @@ void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
  * 送信完了イベント
  */
 void cbToCoNet_vTxEvent(uint8 u8CbId, uint8 bStatus) {
+#ifndef OTA
 	V_PRINTF(LB ">>> TxCmp %s(tick=%d,req=#%d) <<<",
 			bStatus ? "Ok" : "Ng",
 			u32TickCount_ms & 0xFFFF,
 			u8CbId
 			);
-
+#endif
 	if(sAppData.u8LedState == 0x00){
 		LED_OFF();
 	}

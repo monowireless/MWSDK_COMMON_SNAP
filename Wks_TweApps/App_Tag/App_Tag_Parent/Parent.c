@@ -148,6 +148,11 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 		// Register
 		ToCoNet_Event_Register_State_Machine(vProcessEvCore);
 
+		TOCONET_DUPCHK_TICK_SCALE = 0x85;
+		TOCONET_DUPCHK_TIMEOUT_ms = 1024;
+		TOCONET_DUPCHK_DECLARE_CONETXT(DUPCHK,40);
+		ToCoNet_DupChk_psInit(DUPCHK);
+
 		// Others
 		vInitHardware(FALSE);
 		Interactive_vInit();

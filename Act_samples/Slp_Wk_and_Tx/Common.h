@@ -21,7 +21,7 @@ const uint16_t SLEEP_DUR = 2000; // every 2000ms
 const uint16_t SLEEP_DUR_TERMOR = 200; // SLEEP_DUR +/- 200
 
 // Application control
-enum class E_STATE {
+enum class STATE {
     INIT = 0,    // INIT STATE
     WORK_JOB,    // do some job (e.g sensor capture)
     TX,          // reuest transmit
@@ -30,6 +30,6 @@ enum class E_STATE {
     EXIT_FATAL   // has a fatal error (will do system reset)
 };
 
-/* Copyright (C) 2020 Mono Wireless Inc. All Rights Reserved.    *
- * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE   *
- * AGREEMENT).                                                   */
+/* Copyright (C) 2020-2021 Mono Wireless Inc. All Rights Reserved. *
+ * Released under MW-SLA-*J,*E (MONO WIRELESS SOFTWARE LICENSE     *
+ * AGREEMENT).                                                     */

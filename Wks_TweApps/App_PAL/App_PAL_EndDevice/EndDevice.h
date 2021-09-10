@@ -58,6 +58,9 @@ extern "C" {
 #define E_APPCONF_OPT_APPTWELITEMODE 0x20000000UL
 #define IS_APPCONF_OPT_APPTWELITEMODE() ((sAppData.sFlash.sData.u32param & 0xF0000000) == E_APPCONF_OPT_APPTWELITEMODE)
 
+#define E_APPCONF_OPT_LOOSE_TH 0x00100000UL
+#define IS_APPCONF_OPT_LOOSE_TH() (sAppData.sFlash.sData.u32param & E_APPCONF_OPT_LOOSE_TH)
+
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/

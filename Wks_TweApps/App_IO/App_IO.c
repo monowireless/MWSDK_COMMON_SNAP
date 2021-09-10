@@ -1900,7 +1900,7 @@ void vProcessSerialCmd(tsModbusCmd *pSer) {
 	OCTET(u8addr); // [1] OCTET : 論理ID
 	OCTET(u8cmd); // [1] OCTET : 要求番号
 
-	DBGOUT(3, "* UARTCMD ln=%d cmd=%02x req=%02x %02x%0x2%02x%02x..." LB,
+	DBGOUT(3, "* UARTCMD ln=%d cmd=%02x req=%02x %02x%02x%02x%02x..." LB,
 			pSer->u16len,
 			u8addr,
 			u8cmd,
@@ -1949,7 +1949,7 @@ void vProcessSerialCmd(tsModbusCmd *pSer) {
 
 				if (p > p_end) return; // v1.1.3 (終端チェック)
 
-				DBGOUT(1, "SERCMD:IO REQ: %02x %02x"LB,
+				DBGOUT(1, "SERCMD:IO REQ: %04x %04x"LB,
 						sIOreq.u16IOports,
 						sIOreq.u16IOports_use_mask
 						);
@@ -2561,7 +2561,7 @@ static void vReceiveIoSettingRequest(tsRxDataApp *pRx) {
 			}
 		}
 
-		DBGOUT(1, "RECV:IO REQ: %02x %02x"LB,
+		DBGOUT(1, "RECV:IO REQ: %04x %04x"LB,
 				u16ButtonState,
 				u16ButtonChanged
 				);

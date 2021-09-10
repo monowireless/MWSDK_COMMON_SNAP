@@ -42,6 +42,7 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 			V_PRINTF(LB "*** Cold starting");
 			V_PRINTF(LB "* start end device[%d]", u32TickCount_ms & 0xFFFF);
 		}
+		V_FLUSH();
 
 
 		// RC クロックのキャリブレーションを行う
@@ -79,7 +80,19 @@ PRSEV_HANDLER_DEF(E_STATE_RUNNING, tsEvent *pEv, teEvent eEvent, uint32 u32evarg
 		// 短期間スリープからの起床をしたので、センサーの値をとる
 	if ((eEvent == E_EVENT_START_UP) && (u32evarg & EVARG_START_UP_WAKEUP_RAMHOLD_MASK)) {
 		V_PRINTF("#");
+		bMAX31855reset();
 		vProcessMAX31855(E_EVENT_START_UP);
+	}
+
+	if( u8sns_cmplt != E_SNS_ALL_CMP && (u8sns_cmplt & E_SNS_ADC_CMP_MASK) ){
+		pEv->bKeepStateOnSetAll = TRUE;
+
+		vAHI_UartDisable(UART_PORT); // UART を解除してから(このコードは入っていなくても動作は同じ)
+		vAHI_DioWakeEnable(0, 0);
+
+		// スリープを行うが、WAKE_TIMER_0 は定周期スリープのためにカウントを続けているため
+		// 空いている WAKE_TIMER_1 を利用する
+		ToCoNet_vSleep(E_AHI_WAKE_TIMER_1, 200, FALSE, FALSE); // PERIODIC RAM OFF SLEEP USING WK1
 	}
 
 	// 送信処理に移行

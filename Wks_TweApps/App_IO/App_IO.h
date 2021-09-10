@@ -56,8 +56,8 @@ typedef struct {
  * IO 設定要求
  */
 typedef struct {
-	uint8 u16IOports;          //!< 出力IOの状態 (1=Lo, 0=Hi)
-	uint8 u16IOports_use_mask; //!< 設定を行うポートなら TRU
+	uint16 u16IOports;          //!< 出力IOの状態 (1=Lo, 0=Hi)
+	uint16 u16IOports_use_mask; //!< 設定を行うポートなら TRU
 } tsIOSetReq;
 
 /** @ingroup MASTER
