@@ -1,0 +1,77 @@
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/EndDevice.c:15,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_ARIA.c:8:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/I2CDevice.c:7:0,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/I2CDevice.c:5:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from ../App_PAL/App_PAL_EndDevice/source/appdata.h:10,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/Common/Source/Interactive.c:14:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from ../App_PAL/App_PAL_EndDevice/source/appdata.h:10,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/EndDevice.h:34,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_ARIA.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/source/ProcessEv_AMB.c:14:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from ../App_PAL/App_PAL_EndDevice/source/appdata.h:10,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/EndDevice.h:34,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_ARIA.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/source/ProcessEv_Accel_Event.c:10:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from ../App_PAL/App_PAL_EndDevice/source/appdata.h:10,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/EndDevice.h:34,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_ARIA.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/source/ProcessEv_ConfigMaster.c:15:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from ../App_PAL/App_PAL_EndDevice/source/appdata.h:10,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/EndDevice.h:34,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_ARIA.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/source/ProcessEv_MAG.c:16:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from ../App_PAL/App_PAL_EndDevice/source/appdata.h:10,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/EndDevice.h:34,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_ARIA.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/source/ProcessEv_MOT.c:19:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from ../App_PAL/App_PAL_EndDevice/source/appdata.h:10,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/EndDevice.h:34,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_ARIA.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/source/ProcessEv_MOT_Event.c:14:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from ../App_PAL/App_PAL_EndDevice/source/appdata.h:10,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/EndDevice.h:34,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_ARIA.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/source/ProcessEv_NOC.c:12:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from ../App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from ../App_PAL/Common/Source/config.h:5,
+                 from ../App_PAL/App_PAL_EndDevice/source/appdata.h:10,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/App_PAL_EndDevice/EndDevice.h:34,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_ARIA.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/Common/Sensor/accel_event.c:16:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/Common/Source/config.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/Common/Source/common.c:13:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]
+In file included from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/Common/Source/../Source_User/config.h:18:0,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/Common/Source/config.h:5,
+                 from C:/MWSTAGE/MWSDK/Wks_TweApps/App_ARIA_OTA/App_PAL/Common/Source/flash.c:16:
+../App_PAL/Common/Source/common.h:43:2: warning: #warning "IO CONF IS FOR OTA!" [-Wcpp]

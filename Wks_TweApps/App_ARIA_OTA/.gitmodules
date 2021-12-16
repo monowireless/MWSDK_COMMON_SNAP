@@ -1,0 +1,6 @@
+[submodule "apppal"]
+	path = apppal
+	url = http://gauss:7990/scm/apppal/apppal.git
+[submodule "App_PAL"]
+	path = App_PAL
+	url = http://gauss:7990/scm/apppal/apppal.git
