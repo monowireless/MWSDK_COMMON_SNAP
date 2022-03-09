@@ -65,6 +65,20 @@ namespace std {
     void __throw_bad_function_call() {;}
 }
 
+// for EASTL
+void* operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line) {
+	auto adr = new uint8_t[size];
+	//MWX_DebugMsg(0, "{new1[] sz=%d %s@%x}", size, pName ? pName : "", adr);
+	return adr;
+}
+
+// for EASTL
+void* operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line) {
+	auto adr = new uint8_t[size];
+	// MWX_DebugMsg(0, "{new2[] sz=%d %s@%x}", size, pName ? pName : "", adr);
+	return adr;
+}
+
 #if 0
 void mwx_static_init()
 {

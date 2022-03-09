@@ -31,7 +31,8 @@ namespace mwx { inline namespace L1 {
 	public:
 		packet_tx_nwk_simple(T *p) : _this(p) {}
 
-		operator mwx::packet_tx& () { return *static_cast<mwx::packet_tx*>(this); }
+		//operator mwx::packet_tx& () { return *static_cast<mwx::packet_tx*>(this); }
+				// has -Wclass-conversion error, may not be necessary. to be removed.
 
 		MWX_APIRET transmit() {
 			return _this->transmit(*this);
@@ -83,15 +84,12 @@ namespace mwx { inline namespace L1 {
 		duplciate_checker _dupchk;
 		NwkSimple_Config _config;
 
-		uint8_t _u8cbid_rpt;
-		uint8_t _u8cbid;
-
 		// duplicate checker (from TWENET C library)
 		void _init_dup_check();
 
 	public:
 		// constructor
-		NwkSimple() : _config{ 0 }, _u8cbid_rpt(0), _u8cbid(0) {}
+		NwkSimple() : _config{ 0 } {}
 
 		// begin method (if necessary, start object here)
 		void begin();
@@ -99,14 +97,15 @@ namespace mwx { inline namespace L1 {
 	public: // TWENET callback handler (mandate)
 		void network_event(mwx::packet_ev_nwk& pEvNwk) {
 			// so far, all network events are ignored.
-			pEvNwk._network_type = _config.u8Type;
-			pEvNwk._network_handled = true;
+			pEvNwk._network_handled = false;
 		}
 
 		void transmit_complete(mwx::packet_ev_tx& pEvTx) {
 			// if user sent packet, report to user class. otherwise (like repeat packets) not.
-			pEvTx._network_type = _config.u8Type;
-			pEvTx._network_handled = (pEvTx.u8CbId > CBID_MASK);
+			if (the_mac.is_cbid(pEvTx.u8CbId)) {
+				pEvTx._network_type = _config.u8Type;
+				pEvTx._network_handled = true;
+			}
 		}
 
 		void receive(mwx::packet_rx& rx);
@@ -177,10 +176,12 @@ namespace mwx { inline namespace L1 {
 		struct secure_pkt {
 			const uint8_t *_pukey;
 			bool _b_recv_plain_pkt;
-			secure_pkt(const uint8_t *pukey, bool b_recv_plain_pkt = false) : _pukey(pukey), _b_recv_plain_pkt(b_recv_plain_pkt)  {}
+			secure_pkt(const uint8_t *pukey = nullptr, bool b_recv_plain_pkt = false) : _pukey(pukey), _b_recv_plain_pkt(b_recv_plain_pkt)  {}
 		};
 		NwkSimple& operator << (secure_pkt&& v) {
-			the_twelite.register_crypt_key((uint8*)v._pukey); // set enc key
+			if (v._pukey != nullptr) {
+				the_twelite.register_crypt_key((uint8*)v._pukey); // set enc key
+			}
 			_config.u8Cmd |= 0x80; // enc mode
 			if (v._b_recv_plain_pkt) _config.u8Cmd |= 0x40; // rcv plain
 			return *this;
