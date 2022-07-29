@@ -46,6 +46,10 @@ extern "C" {
 #define IS_APPCONF_OPT_EVENTMODE() ((sAppData.sFlash.sData.u32param & 0x0F000000) == E_APPCONF_OPT_EVENTMODE)
 #define E_APPCONF_OPT_DICEMODE 0x02000000UL
 #define IS_APPCONF_OPT_DICEMODE() ((sAppData.sFlash.sData.u32param & 0x0F000000) == E_APPCONF_OPT_DICEMODE)
+#define E_APPCONF_OPT_AVERAGEMODE 0x05000000UL
+#define IS_APPCONF_OPT_AVERAGEMODE() ((sAppData.sFlash.sData.u32param & 0x0F000000) == E_APPCONF_OPT_AVERAGEMODE)
+#define E_APPCONF_OPT_ONESHOTMODE 0x08000000UL
+#define IS_APPCONF_OPT_ONESHOTMODE() ((sAppData.sFlash.sData.u32param & 0x0F000000) == E_APPCONF_OPT_ONESHOTMODE)
 
 // CUE
 #define E_APPCONF_OPT_FIFOMODE 0x03000000UL
@@ -60,6 +64,10 @@ extern "C" {
 
 #define E_APPCONF_OPT_LOOSE_TH 0x00100000UL
 #define IS_APPCONF_OPT_LOOSE_TH() (sAppData.sFlash.sData.u32param & E_APPCONF_OPT_LOOSE_TH)
+
+#define E_APPCONF_OPT_USE_I2CDEVICE 0x00200000UL
+#define IS_APPCONF_OPT_USE_I2CDEVICE() (sAppData.sFlash.sData.u32param & E_APPCONF_OPT_USE_I2CDEVICE)
+
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/
@@ -105,23 +113,29 @@ typedef struct {
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
-void vInitAppNOC();
 void vInitAppMAG();
-void vInitAppENV();
-void vInitAppMOT();
-void vInitAppMOT_Event();
-#ifndef USE_CUE
-void vInitAppLED();
 void vInitAppConfig();
-#else
-#ifdef OTA
+
+#if defined(OTA)
 void vInitAppConfigMaster();
-#else
+#elif defined(USE_CUE)
 void vInitAppCUE();
 void vInitAppCUEConfig();
 void vInitAppOTA();
+void vInitAppMOT();
+void vInitAppMOT_Event();
 void vInitOTAParam( uint8 u8CountNum, uint16 u16TimeOutMs_min, uint16 u16TimeOutMs_max );
-#endif
+#elif defined(USE_ARIA)
+void vInitAppARIA();
+void vInitAppCUEConfig();
+void vInitAppOTA();
+void vInitOTAParam( uint8 u8CountNum, uint16 u16TimeOutMs_min, uint16 u16TimeOutMs_max );
+#else
+void vInitAppLED();
+void vInitAppNOC();
+void vInitAppENV();
+void vInitAppMOT();
+void vInitAppMOT_Event();
 #endif
 
 /****************************************************************************/
@@ -136,7 +150,7 @@ extern tsCbHandler *psCbHandler_Sub;
 extern void *pvProcessEv;
 extern void *pvProcessEv_Sub;
 
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 extern tsCbHandler *psCbHandler_OTA;
 extern void *pvProcessEv_OTA;
 #endif

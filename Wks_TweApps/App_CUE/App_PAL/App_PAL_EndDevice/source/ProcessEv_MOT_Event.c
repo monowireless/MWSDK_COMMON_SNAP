@@ -10,6 +10,8 @@
 
 #ifdef USE_CUE
 #include "App_CUE.h"
+#elif USE_ARIA
+#include "App_ARIA.h"
 #else
 #include "EndDevice.h"
 #endif
@@ -84,7 +86,6 @@ static bool_t bSendAppTag();
 static bool_t bSendAppTwelite();
 
 static uint8 u8sns_cmplt = 0;
-tsObjData_MC3630 sObjMC3630;
 
 enum {
 	E_SNS_ADC_CMP_MASK = 1,

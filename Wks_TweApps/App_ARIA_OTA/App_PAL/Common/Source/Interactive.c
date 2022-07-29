@@ -377,12 +377,35 @@ static void vProcessInputByte(uint8 u8Byte) {
 		break;
 #endif
 
+#if !defined(USE_CUE)
+	case 'd':
+		V_PRINTF("Temperature Coefficient: ");
+		INPSTR_vStart(&sSerInpStr, E_INPUTSTRING_DATATYPE_DEC, 4, E_APPCONF_TMP_COEFFICIENT);
+		break;
+
+	case 'D':
+		V_PRINTF("Temperature Offset: ");
+		INPSTR_vStart(&sSerInpStr, E_INPUTSTRING_DATATYPE_STRING, 5, E_APPCONF_TMP_OFFSET);
+		break;
+
+	case 'f':
+		V_PRINTF("Humidity Coefficient: ");
+		INPSTR_vStart(&sSerInpStr, E_INPUTSTRING_DATATYPE_DEC, 4, E_APPCONF_HUM_COEFFICIENT);
+		break;
+
+	case 'F':
+		V_PRINTF("Humidity Offset: ");
+		INPSTR_vStart(&sSerInpStr, E_INPUTSTRING_DATATYPE_STRING, 5, E_APPCONF_HUM_OFFSET);
+		break;
+#endif
+
 	case 'S':
 		// フラッシュへのデータ保存
 		if (u8lastbyte == 'R') {
 			// R S と連続入力された場合は、フラッシュエリアを消去する
 			V_PRINTF("!INF CLEAR SAVE AREA.");
 			bFlash_Erase(0); // SECTOR ERASE
+			bFlash_Erase(1); // SECTOR ERASE
 		} else {
 			bool_t bRet = Config_bSave();
 			V_PRINTF("!INF FlashWrite %s"LB, bRet ? "Success" : "Failed");
@@ -700,6 +723,116 @@ static void vProcessInputString(tsInpStr_Context *pContext) {
 		break;
 #endif
 
+#if !defined(USE_CUE)
+	case E_APPCONF_TMP_COEFFICIENT:
+		_C{
+			uint32 u32val = u32string2dec(pu8str, u8idx);
+			V_PRINTF(LB"-> ");
+			if (u32val <= 0xFFFF) {
+				sConfig_UnSaved.u32TmpCoefficient = u32val;
+				V_PRINTF("%d"LB, u32val);
+			} else {
+				V_PRINTF("(ignored)"LB);
+			}
+		}
+		break;
+	
+	case E_APPCONF_TMP_OFFSET:
+		_C{
+			bool_t minus = FALSE;
+
+			if(pu8str[0] == '-'){
+				minus = TRUE;
+				pu8str++;
+				u8idx--;
+			}else if(pu8str[0] == '+'){
+				pu8str++;
+				u8idx--;
+			}
+
+			uint8 i;
+			bool_t endflag = FALSE;
+			for(i=0; i<u8idx; i++){
+				if(pu8str[i] < '0' || '9' < pu8str[i]){
+					endflag = TRUE;
+					break;
+				}
+			}
+			if(endflag){
+				V_PRINTF("(ignored)"LB);
+				break;
+			}
+
+			uint32 u32val = u32string2dec(pu8str, u8idx);
+			V_PRINTF(LB"-> ");
+			if (u32val <= 2000) {
+				sConfig_UnSaved.i16TmpOffset = u32val;
+				if(minus){
+					sConfig_UnSaved.i16TmpOffset *= -1;
+				}
+
+				V_PRINTF("%d"LB, sConfig_UnSaved.i16TmpOffset);
+			} else {
+				V_PRINTF("(ignored)"LB);
+			}
+		}
+		break;
+	
+	case E_APPCONF_HUM_COEFFICIENT:
+		_C{
+			uint32 u32val = u32string2dec(pu8str, u8idx);
+			V_PRINTF(LB"-> ");
+			if (u32val <= 0xFFFF) {
+				sConfig_UnSaved.u32HumCoefficient = u32val;
+				V_PRINTF("%d"LB, u32val);
+			} else {
+				V_PRINTF("(ignored)"LB);
+			}
+		}
+		break;
+	
+	case E_APPCONF_HUM_OFFSET:
+		_C{
+			bool_t minus = FALSE;
+
+			if(pu8str[0] == '-'){
+				minus = TRUE;
+				pu8str++;
+				u8idx--;
+			}else if(pu8str[0] == '+'){
+				pu8str++;
+				u8idx--;
+			}
+
+			uint8 i;
+			bool_t endflag = FALSE;
+			for(i=0; i<u8idx; i++){
+				if(pu8str[i] < '0' || '9' < pu8str[i]){
+					endflag = TRUE;
+					break;
+				}
+			}
+			if(endflag){
+				V_PRINTF("(ignored)"LB);
+				break;
+			}
+
+			uint32 u32val = u32string2dec(pu8str, u8idx);
+			V_PRINTF(LB"-> ");
+			if (u32val <= 2000) {
+				sConfig_UnSaved.i16HumOffset = u32val;
+				if(minus){
+					sConfig_UnSaved.i16HumOffset *= -1;
+				}
+
+				V_PRINTF("%d"LB, sConfig_UnSaved.i16HumOffset);
+			} else {
+				V_PRINTF("(ignored)"LB);
+			}
+		}
+		break;
+#endif
+
 	default:
 		break;
 	}
@@ -739,6 +872,10 @@ bool_t Config_bLoad(tsFlash *p) {
  */
 static void vConfig_UnSetAll(tsFlashApp *p) {
 	memset(p, 0xFF, sizeof(tsFlashApp));
+#if !defined(USE_CUE)
+	p->i16TmpOffset = INIT_VAL_i16;
+	p->i16HumOffset = INIT_VAL_i16;
+#endif
 }
 
 /**
@@ -830,6 +967,21 @@ static void vConfig_Update(tsFlashApp *pTemp) {
 		memcpy(pTemp->au8Event, sConfig_UnSaved.au8Event, sConfig_UnSaved.u8EventNum*8);
 		pTemp->u8EventNum = sConfig_UnSaved.u8EventNum;
 	}
+#endif
+#if !defined(USE_CUE)
+	if( sConfig_UnSaved.u32TmpCoefficient != 0xFFFFFFFF ){
+		pTemp->u32TmpCoefficient = sConfig_UnSaved.u32TmpCoefficient;
+	}
+	if( sConfig_UnSaved.i16TmpOffset != INIT_VAL_i16 ){
+		pTemp->i16TmpOffset = sConfig_UnSaved.i16TmpOffset;
+	}
+	if( sConfig_UnSaved.u32HumCoefficient != 0xFFFFFFFF ){
+		pTemp->u32HumCoefficient = sConfig_UnSaved.u32HumCoefficient;
+	}
+	if( sConfig_UnSaved.i16HumOffset != INIT_VAL_i16 ){
+		pTemp->i16HumOffset = sConfig_UnSaved.i16HumOffset;
+	}
+
 #endif
 }
 
@@ -964,6 +1116,21 @@ static void vSerUpdateScreen() {
 			(sConfig_UnSaved.au8Event[136] != 0xFF) ? sConfig_UnSaved.au8Event : sAppData.sFlash.sData.au8Event,
 			(sConfig_UnSaved.au8Event[136] != 0xFF) ? '*' : ' '
 			);
+#endif
+
+#if !defined(USE_CUE)
+	V_PRINTF(" d: set Temperature Coefficient (%d)%c" LB,
+			FL_IS_MODIFIED_u32(TmpCoefficient) ? FL_UNSAVE_u32(TmpCoefficient) : FL_MASTER_u32(TmpCoefficient),
+			FL_IS_MODIFIED_u32(TmpCoefficient) ? '*' : ' ');
+	V_PRINTF(" D: set Temperature Offset (%d)%c" LB,
+			FL_IS_MODIFIED_i16(TmpOffset) ? FL_UNSAVE_i16(TmpOffset) : FL_MASTER_i16(TmpOffset),
+			FL_IS_MODIFIED_i16(TmpOffset) ? '*' : ' ');
+	V_PRINTF(" f: set Humidity Coefficient (%d)%c" LB,
+			FL_IS_MODIFIED_u32(HumCoefficient) ? FL_UNSAVE_u32(HumCoefficient) : FL_MASTER_u32(HumCoefficient),
+			FL_IS_MODIFIED_u32(HumCoefficient) ? '*' : ' ');
+	V_PRINTF(" F: set Humidity Offset (%d)%c" LB,
+			FL_IS_MODIFIED_i16(HumOffset) ? FL_UNSAVE_i16(HumOffset) : FL_MASTER_i16(HumOffset),
+			FL_IS_MODIFIED_i16(HumOffset) ? '*' : ' ');
 #endif
 
 	V_PRINTF("---"LB);

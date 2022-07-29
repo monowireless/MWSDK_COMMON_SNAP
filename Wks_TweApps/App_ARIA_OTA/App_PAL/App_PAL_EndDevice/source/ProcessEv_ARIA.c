@@ -25,7 +25,6 @@ static void vStoreSensorValue();
 static void vProcessARIA(teEvent eEvent);
 static uint8 u8sns_cmplt = 0;
 
-static tsSnsObj sSnsObj;
 static tsObjData_SHT4x sObjSHT4x;
 
 static uint8 DI_Bitmap = 0;
@@ -199,11 +198,33 @@ PRSEV_HANDLER_DEF(E_STATE_APP_WAIT_TX, tsEvent *pEv, teEvent eEvent, uint32 u32e
 
 		S_OCTET(0x01);			// Temp
 		S_OCTET(0x00);
-		S_BE_WORD(sObjSHT4x.ai16Result[SHT4x_IDX_TEMP]);
+
+		int16 i16temp = sObjSHT4x.ai16Result[SHT4x_IDX_TEMP];
+
+		if( sAppData.sFlash.sData.u32TmpCoefficient ){
+			i16temp = ((sAppData.sFlash.sData.u32TmpCoefficient*(int32)i16temp)>>10) + sAppData.sFlash.sData.i16TmpOffset;
+		}else{
+			i16temp = i16temp + sAppData.sFlash.sData.i16TmpOffset;
+		}
+
+		V_PRINTF(LB"%d, %d(%d,%d)", sObjSHT4x.ai16Result[SHT4x_IDX_TEMP], i16temp, sAppData.sFlash.sData.u32TmpCoefficient, sAppData.sFlash.sData.i16TmpOffset );
+
+		S_BE_WORD(i16temp);
 
 		S_OCTET(0x02);			// Hum
 		S_OCTET(0x00);
-		S_BE_WORD(sObjSHT4x.ai16Result[SHT4x_IDX_HUMID]);
+
+		int16 i16hum = sObjSHT4x.ai16Result[SHT4x_IDX_HUMID];
+
+		if( sAppData.sFlash.sData.u32HumCoefficient ){
+			i16hum = ((sAppData.sFlash.sData.u32HumCoefficient*(int32)i16hum)>>10) + ((int32)sAppData.sFlash.sData.i16HumOffset);
+		}else{
+			i16hum = i16hum + sAppData.sFlash.sData.i16HumOffset;
+		}
+
+		V_PRINTF(LB"%d, %d(%d,%d)", sObjSHT4x.ai16Result[SHT4x_IDX_HUMID], i16hum, sAppData.sFlash.sData.u32HumCoefficient, sAppData.sFlash.sData.i16HumOffset );
+
+		S_BE_WORD(i16hum);
 
 		sAppData.u16frame_count++;
 		if ( bTransmitToParent( sAppData.pContextNwk, au8Data, q-au8Data ) ) {

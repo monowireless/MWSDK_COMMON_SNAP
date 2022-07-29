@@ -55,7 +55,6 @@ tsCbHandler *psCbHandler_Sub = NULL;
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
 static void vInitHardware(int f_warm_start);
-//static void vInitPulseCounter();
 static void vInitADC();
 
 static void vSerialInit();
@@ -81,10 +80,12 @@ uint8 u8PowerUp;
 
 void *pvProcessEv;
 void *pvProcessEv_Sub;
-#ifdef USE_CUE
+
+#if defined(USE_CUE) || defined(USE_ARIA)
 tsCbHandler *psCbHandler_OTA = NULL;
 void *pvProcessEv_OTA;
 #endif
+
 void (*pf_cbProcessSerialCmd)(tsSerCmd_Context *);
 
 /****************************************************************************/
@@ -155,7 +156,7 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 		vInitHardware(FALSE);
 
 		// IDが初期値ならDIPスイッチの値を使用する
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 		sAppData.u8LID = (sAppData.sFlash.sData.u8id==0) ? 1:sAppData.sFlash.sData.u8id;
 #else
 		sAppData.u8LID = (sAppData.sFlash.sData.u8id==0) ? ((sAppData.u8DIPSW&0x07)+1+(sAppData.u8DIPSW&0x08?0x80:0)):sAppData.sFlash.sData.u8id+(sAppData.u8DIPSW&0x08?0x80:0);
@@ -169,7 +170,7 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 
 		if ( sAppData.bConfigMode ) {
 			// 設定モードで起動
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 			sToCoNet_AppContext.u32AppId = APP_ID_OTA;
 			sToCoNet_AppContext.u8Channel = CHANNEL_OTA;
 			sToCoNet_AppContext.bRxOnIdle = TRUE;
@@ -187,7 +188,7 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 			// インタラクティブモードの初期化
 			Interactive_vInit();
 		} else
-#ifndef USE_CUE
+#if !defined(USE_CUE) && !defined(USE_ARIA)
 		// 何も刺さっていない
 		if ( sAppData.u8SnsID == PKT_ID_NOCONNECT) {
 			// 通常アプリで起動
@@ -243,6 +244,7 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 		}else
 #else
 #ifndef OTA
+#if defined(USE_CUE)
 		if ( sAppData.u8SnsID == PKT_ID_CUE) {
 			sToCoNet_AppContext.u8MacInitPending = TRUE; // 起動時の MAC 初期化を省略する(送信する時に初期化する)
 			sToCoNet_AppContext.bSkipBootCalib = FALSE; // 起動時のキャリブレーションを行う
@@ -253,13 +255,33 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 			if( IS_APPCONF_OPT_EVENTMODE() ||
 				IS_APPCONF_OPT_DICEMODE() ){
 				vInitAppMOT_Event();
-			}else if( IS_APPCONF_OPT_FIFOMODE() ){
-				vInitAppMOT();
 			}else if( IS_APPCONF_OPT_MAGMODE() ){
 				vInitAppMAG();
+			}else if( IS_APPCONF_OPT_FIFOMODE() ){
+				vInitAppMOT();
+			}else if( IS_APPCONF_OPT_AVERAGEMODE() ){
+				vInitAppMOT();
+			}else if( IS_APPCONF_OPT_ONESHOTMODE() ){
+				vInitAppMOT();
 			}else{
 				vInitAppCUE();
 			}
+#endif
+#if defined(USE_ARIA)
+		//}else
+		if ( sAppData.u8SnsID == PKT_ID_ARIA) {
+			sToCoNet_AppContext.u8MacInitPending = TRUE; // 起動時の MAC 初期化を省略する(送信する時に初期化する)
+			sToCoNet_AppContext.bSkipBootCalib = FALSE; // 起動時のキャリブレーションを行う
+
+			// ADC の初期化
+			vInitADC();
+
+			if( IS_APPCONF_OPT_MAGMODE() ){
+				vInitAppMAG();
+			}else{
+				vInitAppARIA();
+			}
+#endif
 		} else
 #endif
 #endif
@@ -268,7 +290,7 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 		} // 終端の else 節
 
 		// イベント処理関数の登録
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 #ifndef OTA
 		if( !IS_APPCONF_OPT_DISABLE_OTA() ){
 			A_PRINTF(LB"! OTA INIT");
@@ -352,7 +374,7 @@ void cbToCoNet_vMain(void) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vMain) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vMain)();
 	}
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vMain) {
 		(*psCbHandler_OTA->pf_cbToCoNet_vMain)();
 	}
@@ -372,7 +394,7 @@ void cbToCoNet_vRxEvent(tsRxDataApp *pRx) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vRxEvent) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vRxEvent)(pRx);
 	}
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vRxEvent) {
 		(*psCbHandler_OTA->pf_cbToCoNet_vRxEvent)(pRx);
 	}
@@ -400,7 +422,7 @@ void cbToCoNet_vTxEvent(uint8 u8CbId, uint8 bStatus) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vTxEvent) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vTxEvent)(u8CbId, bStatus);
 	}
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vTxEvent) {
 		(*psCbHandler_OTA->pf_cbToCoNet_vTxEvent)(u8CbId, bStatus);
 	}
@@ -421,7 +443,7 @@ void cbToCoNet_vNwkEvent(teEvent eEvent, uint32 u32arg) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vNwkEvent) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vNwkEvent)(eEvent, u32arg);
 	}
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vNwkEvent) {
 		(*psCbHandler_OTA->pf_cbToCoNet_vNwkEvent)(eEvent, u32arg);
 	}
@@ -446,7 +468,7 @@ void cbToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_vHwEvent) {
 		(*psCbHandler_Sub->pf_cbToCoNet_vHwEvent)(u32DeviceId, u32ItemBitmap);
 	}
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_vHwEvent) {
 		(*psCbHandler_OTA->pf_cbToCoNet_vHwEvent)(u32DeviceId, u32ItemBitmap);
 	}
@@ -464,7 +486,7 @@ uint8 cbToCoNet_u8HwInt(uint32 u32DeviceId, uint32 u32ItemBitmap) {
 	if (psCbHandler_Sub && psCbHandler_Sub->pf_cbToCoNet_u8HwInt) {
 		bRet = (*psCbHandler_Sub->pf_cbToCoNet_u8HwInt)(u32DeviceId, u32ItemBitmap);
 	}
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 	if (psCbHandler_OTA && psCbHandler_OTA->pf_cbToCoNet_u8HwInt) {
 		bRet = (*psCbHandler_OTA->pf_cbToCoNet_u8HwInt)(u32DeviceId, u32ItemBitmap);
 	}
@@ -569,9 +591,13 @@ static void vInitHardware(int f_warm_start)
 	// SMBUS の初期化
 	vSMBusInit();
 
-#ifdef USE_CUE
+#if defined(USE_CUE)
 	sAppData.u8SnsID = PKT_ID_CUE;
 	sPALData.u8PALModel = PKT_ID_CUE;
+	sPALData.u8PALVersion = 1;
+#elif defined(USE_ARIA)
+	sAppData.u8SnsID = PKT_ID_ARIA;
+	sPALData.u8PALModel = PKT_ID_ARIA;
 	sPALData.u8PALVersion = 1;
 #else
 	if(!f_warm_start || sAppData.u8SnsID == 0){
@@ -619,7 +645,8 @@ static void vInitHardware(int f_warm_start)
 		vPortAsOutput(OUTPUT_LED);
 
 		vPortAsInput(INPUT_SWSET);
-#ifdef USE_CUE
+
+#if defined(USE_CUE) || defined(USE_ARIA)
 		if( bPortRead(INPUT_SWSET) || (u8PowerUp == 0x00 && !IS_APPCONF_OPT_DISABLE_OTA()) ){
 #else
 		if( bPortRead(INPUT_SWSET) ){
@@ -707,6 +734,13 @@ static void vInitHardware(int f_warm_start)
 				vPortDisablePullup(INPUT_PC);
 				vPortAsInput(INPUT_PC);
 				u32DioPortWakeUp |= (1UL<<INPUT_PC);
+			case PKT_ID_ARIA:
+				vPortDisablePullup(INPUT_PC);
+				vPortAsInput(INPUT_PC);
+				vPortDisablePullup(SNS_EN);
+				vPortAsInput(SNS_EN);
+				u32DioPortWakeUp |= ( 1UL<<SNS_EN | 1UL<<INPUT_PC );
+				break;
 
 			default:
 				break;

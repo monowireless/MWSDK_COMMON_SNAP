@@ -67,7 +67,8 @@
 #define RMTCNF_MINLQI 100 //!< 有効なLQI値
 
 #ifdef USE_ARIA
-#define RMTCNF_PRTCL_VERSION 0x12 //!< パケットバージョン
+#define RMTCNF_PRTCL_VERSION 0x13 //!< パケットバージョン
+//#define RMTCNF_PRTCL_VERSION 0x12 //!< パケットバージョン
 #elif USE_CUE
 #define RMTCNF_PRTCL_VERSION 0x11 //!< パケットバージョン
 #else

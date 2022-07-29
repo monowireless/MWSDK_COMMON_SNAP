@@ -29,6 +29,8 @@
 
 #ifdef USE_CUE
 #include "App_CUE.h"
+#elif USE_ARIA
+#include "App_ARIA.h"
 #else
 #include "EndDevice.h"
 #endif
@@ -243,7 +245,7 @@ bool_t bTransmitToParent(tsToCoNet_Nwk_Context *pNwk, uint8 *pu8Data, uint8 u8Le
 	uint8 u8nEventFlag = 0x80;
 	uint8 u8PID = sPALData.u8PALModel&0x7F;
 	if( sPALData.u8PALModel == PKT_ID_CUE  ){
-		if( IS_APPCONF_OPT_FIFOMODE() ){
+		if( IS_APPCONF_OPT_FIFOMODE() || IS_APPCONF_OPT_AVERAGEMODE() ){
 			u8PID = PKT_ID_MOT;
 		}else
 		if( IS_APPCONF_OPT_EVENTMODE() || IS_APPCONF_OPT_DICEMODE() ){
@@ -260,11 +262,21 @@ bool_t bTransmitToParent(tsToCoNet_Nwk_Context *pNwk, uint8 *pu8Data, uint8 u8Le
 			u8nEventFlag = 0;
 		}
 	}else
+	if( sPALData.u8PALModel == PKT_ID_ARIA ){
+		if( IS_APPCONF_OPT_MAGMODE() ){
+			u8PID = PKT_ID_MAG;
+			if( IS_APPCONF_OPT_EVENTMODE_MAG() ){
+				u8nEventFlag = 0x00;
+			}
+		}else{
+			u8nEventFlag = 0x00;
+		}	
+	}else
 	if( sPALData.u8PALModel == PKT_ID_MOT ){
 		if( IS_APPCONF_OPT_EVENTMODE() || IS_APPCONF_OPT_DICEMODE() ){
 			u8nEventFlag = 0x00;
 		}
-	}
+	}else
 	if( sPALData.u8PALModel == PKT_ID_MAG ){
 		if( IS_APPCONF_OPT_EVENTMODE_MAG() ){
 			u8nEventFlag = 0x00;

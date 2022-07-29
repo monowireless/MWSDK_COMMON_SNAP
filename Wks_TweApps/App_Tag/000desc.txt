@@ -1,3 +1,10 @@
-無線タグアプリ （App_Tag）
-無線タグアプリ（App_Tag）は無線センサーの作成に適した低消費電力を追求したアプリです。コイン型電池での長期稼動に対応します。
-https://mono-wireless.com/jp/products/TWE-APPS/App_Tag/
+[JAPANESE]
+TITLE=無線タグアプリ（App_Tag）
+DESC=無線センサタグの作成に適したアプリです。
+低消費電力を追求しており、コイン型電池による長期稼動に対応します。
+URL=https://mono-wireless.com/jp/products/TWE-APPS/App_Tag/
+[ENGLISH]
+TITLE=App_Tag
+DESC=Designed for wireless sensor tags.
+It is extremely efficient, can operate for a long period of time with a button cell.
+URL=https://mono-wireless.com/jp/products/TWE-APPS/App_Tag/

@@ -6,6 +6,8 @@
 
 #ifdef USE_CUE
 #include "App_CUE.h"
+#elif USE_ARIA
+#include "App_ARIA.h"
 #else
 #include "EndDevice.h"
 #endif
@@ -30,8 +32,6 @@ static void vProcessAccel_Event(teEvent eEvent);
 static uint8 u8sns_cmplt = 0;
 //static uint8 u8analyze_block = 4;		// 0~4まで
 static uint8 u8before_event = 0;
-static tsSnsObj sSnsObj;
-extern tsObjData_MC3630 sObjMC3630;
 
 enum {
 	E_SNS_MC3630_CMP = 1,

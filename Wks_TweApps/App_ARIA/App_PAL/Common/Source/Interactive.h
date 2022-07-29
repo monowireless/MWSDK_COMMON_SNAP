@@ -63,6 +63,10 @@ extern void vProcessSerialCmd(tsSerCmd_Context *pCmd);
 #define F_PUTCHAR(c) (&sSerStream)->bPutChar(sSerStream.u8Device, c)
 #define F_FLUSH() SERIAL_vFlush(UART_PORT)
 
+#define INIT_VAL_i32 -2147483648			//	符号ありint32の初期値
+#define INIT_VAL_i16 -32768					//	符号ありint16の初期値
+#define INIT_VAL_i8 -128					//	符号ありint8の初期値
+
 #define FL_MASTER_u32(c) sAppData.sFlash.sData.u32##c //!< 構造体要素アクセス用のマクロ @ingroup FLASH
 #define FL_UNSAVE_u32(c) sConfig_UnSaved.u32##c //!< 構造体要素アクセス用のマクロ @ingroup FLASH
 #define FL_IS_MODIFIED_u32(c) (sConfig_UnSaved.u32##c != 0xFFFFFFFF)  //!< 構造体要素アクセス用のマクロ @ingroup FLASH
@@ -77,19 +81,15 @@ extern void vProcessSerialCmd(tsSerCmd_Context *pCmd);
 
 #define FL_MASTER_i32(c) sAppData.sFlash.sData.i32##c //!< 構造体要素アクセス用のマクロ @ingroup FLASH
 #define FL_UNSAVE_i32(c) sConfig_UnSaved.i32##c //!< 構造体要素アクセス用のマクロ @ingroup FLASH
-#define FL_IS_MODIFIED_i32(c) (sConfig_UnSaved.i32##c != -2147483648)  //!< 構造体要素アクセス用のマクロ @ingroup FLASH
+#define FL_IS_MODIFIED_i32(c) (sConfig_UnSaved.i32##c != INIT_VAL_i32)  //!< 構造体要素アクセス用のマクロ @ingroup FLASH
 
 #define FL_MASTER_i16(c) sAppData.sFlash.sData.i16##c //!< 構造体要素アクセス用のマクロ @ingroup FLASH
 #define FL_UNSAVE_i16(c) sConfig_UnSaved.i16##c //!< 構造体要素アクセス用のマクロ @ingroup FLASH
-#define FL_IS_MODIFIED_i16(c) (sConfig_UnSaved.i16##c != -32768)  //!< 構造体要素アクセス用のマクロ @ingroup FLASH
+#define FL_IS_MODIFIED_i16(c) (sConfig_UnSaved.i16##c != INIT_VAL_i16)  //!< 構造体要素アクセス用のマクロ @ingroup FLASH
 
 #define FL_MASTER_i8(c) sAppData.sFlash.sData.i8##c //!< 構造体要素アクセス用のマクロ @ingroup FLASH
 #define FL_UNSAVE_i8(c) sConfig_UnSaved.i8##c //!< 構造体要素アクセス用のマクロ @ingroup FLASH
-#define FL_IS_MODIFIED_i8(c) (sConfig_UnSaved.i8##c != -128)  //!< 構造体要素アクセス用のマクロ @ingroup FLASH
-
-#define INIT_VAL_i32 -2147483648			//	符号ありint32の初期値
-#define INIT_VAL_i16 -32768					//	符号ありint16の初期値
-#define INIT_VAL_i8 -128					//	符号ありint8の初期値
+#define FL_IS_MODIFIED_i8(c) (sConfig_UnSaved.i8##c != INIT_VAL_i8)  //!< 構造体要素アクセス用のマクロ @ingroup FLASH
 
 #define VERSION_U32 ((VERSION_CODE << 24) | (VERSION_MAIN << 16) | (VERSION_SUB << 8) | (VERSION_VAR))
 
@@ -126,6 +126,10 @@ enum {
 	E_APPCONF_SER_PARAM,    //!< センサの固有のパラメータの設定
 	E_APPCONF_PARAM,    //!< センサの固有のパラメータの設定
 	E_APPCONF_EVENT,    //!< LED PAL のイベント発生時のパラメータを指定する
+	E_APPCONF_TMP_COEFFICIENT,    //!< 温度センサーの係数を指定する
+	E_APPCONF_TMP_OFFSET,    //!< 温度センサーのオフセットを指定する
+	E_APPCONF_HUM_COEFFICIENT,    //!< 温度センサーの係数を指定する
+	E_APPCONF_HUM_OFFSET,    //!< 湿度センサーのオフセットを指定する
 	E_APPCONF_TEST
 };
 

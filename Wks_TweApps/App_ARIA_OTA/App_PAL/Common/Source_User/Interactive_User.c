@@ -33,6 +33,13 @@ static void Config_vSetDefaults(tsFlashApp *p) {
 	p->u8EventNum = 8;
 #endif
 
+#if !defined(USE_CUE)
+	p->u32TmpCoefficient = 0;
+	p->i16TmpOffset = 0;
+	p->u32HumCoefficient = 0;
+	p->i16HumOffset = 0;
+#endif
+
 	p->u32Opt = 1; // デフォルトの設定ビット
 
 	p->u32EncKey = DEFAULT_ENC_KEY;

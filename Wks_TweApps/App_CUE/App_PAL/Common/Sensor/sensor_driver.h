@@ -50,5 +50,6 @@ void vSnsObj_Init(tsSnsObj *pObj);
 
 #define SENSOR_DRIVER_H_
 
+extern tsSnsObj sSnsObj;
 
 #endif /* SENSOR_DRIVER_H_ */

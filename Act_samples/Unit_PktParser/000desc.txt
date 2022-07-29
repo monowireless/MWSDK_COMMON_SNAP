@@ -1,4 +1,8 @@
 [JAPANESE]
-TITLE=パケットパーサー
-DESC=ｼﾘｱﾙ書式でのﾒｯｾｰｼﾞの内容を更に解釈します。
-URL=https://mwx.twelite.info/act_samples/unit_acts
+TITLE=パケットパーサ
+DESC=シリアル出力書式のパケット内容を解釈するサンプルです。
+URL=jp/MWX/content/act_samples/unit_acts.html
+[ENGLISH]
+TITLE=Packet parser
+DESC=Act sample that interprets packet contents from serial messages.
+URL=en/MWX/content/act_samples/unit_acts.html

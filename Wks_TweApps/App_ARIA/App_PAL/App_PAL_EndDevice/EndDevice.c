@@ -244,6 +244,7 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 		}else
 #else
 #ifndef OTA
+#if defined(USE_CUE)
 		if ( sAppData.u8SnsID == PKT_ID_CUE) {
 			sToCoNet_AppContext.u8MacInitPending = TRUE; // 起動時の MAC 初期化を省略する(送信する時に初期化する)
 			sToCoNet_AppContext.bSkipBootCalib = FALSE; // 起動時のキャリブレーションを行う
@@ -254,14 +255,20 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 			if( IS_APPCONF_OPT_EVENTMODE() ||
 				IS_APPCONF_OPT_DICEMODE() ){
 				vInitAppMOT_Event();
-			}else if( IS_APPCONF_OPT_FIFOMODE() ){
-				vInitAppMOT();
 			}else if( IS_APPCONF_OPT_MAGMODE() ){
 				vInitAppMAG();
+			}else if( IS_APPCONF_OPT_FIFOMODE() ){
+				vInitAppMOT();
+			}else if( IS_APPCONF_OPT_AVERAGEMODE() ){
+				vInitAppMOT();
+			}else if( IS_APPCONF_OPT_ONESHOTMODE() ){
+				vInitAppMOT();
 			}else{
 				vInitAppCUE();
 			}
-		}else
+#endif
+#if defined(USE_ARIA)
+		//}else
 		if ( sAppData.u8SnsID == PKT_ID_ARIA) {
 			sToCoNet_AppContext.u8MacInitPending = TRUE; // 起動時の MAC 初期化を省略する(送信する時に初期化する)
 			sToCoNet_AppContext.bSkipBootCalib = FALSE; // 起動時のキャリブレーションを行う
@@ -274,7 +281,7 @@ void cbAppColdStart(bool_t bAfterAhiInit) {
 			}else{
 				vInitAppARIA();
 			}
-
+#endif
 		} else
 #endif
 #endif

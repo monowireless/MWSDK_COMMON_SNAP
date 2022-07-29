@@ -11,11 +11,21 @@
 #include "Interactive.h"
 #ifdef USE_CUE
 #include "App_CUE.h"
+#elif USE_ARIA
+#include "App_ARIA.h"
 #else
 #include "EndDevice.h"
 #endif
 
 #include "remote_config.h"
+
+#ifdef USE_ARIA
+#define NAME "TWELITE ARIA"
+#elif USE_CUE
+#define NAME "TWELITE CUE"
+#else
+#define NAME "UNKNOWN"
+#endif
 
 typedef enum{
 	OTA_SUCCESS = 0x00,
@@ -139,7 +149,8 @@ static void cbAppToCoNet_vHwEvent(uint32 u32DeviceId, uint32 u32ItemBitmap) {
  * @param pRx
  */
 static void cbAppToCoNet_vRxEvent(tsRxDataApp *pRx) {
-/*	int i;
+#if 0
+	int i;
 
 	if (IS_APPCONF_OPT_VERBOSE()) {
 		V_PRINTF(LB"RxPkt: Sr:%08X De:%08X Lq:%03d Ln:%02d Cm:%d Sq:%02x [",
@@ -158,7 +169,8 @@ static void cbAppToCoNet_vRxEvent(tsRxDataApp *pRx) {
 		}
 		V_PUTCHAR(']');
 	}
-*/
+#endif
+
 	uint8 *p = pRx->auData;
 
 	if (pRx->u8Cmd == RMTCNF_PKTCMD) {
@@ -172,33 +184,25 @@ static void cbAppToCoNet_vRxEvent(tsRxDataApp *pRx) {
 		// *   パケット種別 = 応答
 		// 受信パケットに応じて処理を変える
 		if( u8pkttyp == RMTCNF_PKTTYPE_REQUEST ){
-
-//			V_PRINTF(LB"!INF REQUEST CONF FROM %08X FW_VER:%d.%d.%d", pRx->u32SrcAddr, (u32ver>>16)&0xFF, (u32ver>>8)&0xFF, u32ver&0xFF );
-
 			// プロトコルバージョンの判定
 			if (u8pktver != RMTCNF_PRTCL_VERSION) {
 				vShowResult( pRx->u32SrcAddr, OTA_ERROR_PRTCLVER, pRx->u8Lqi );
-//				V_PRINTF(LB"!PRTCL_VERSION");
-//				V_PRINTF(" : PKTVER %d", u8pktver );
 				return;
 			}
 
+#if 0
 			// ファームウェアのバージョンの判定
-//			if (u32ver != VERSION_U32) {
-//				vShowResult( pRx->u32SrcAddr, OTA_ERROR_APPVER, pRx->u8Lqi );
-//				V_PRINTF(LB"!VERSION_U32");
-//				V_PRINTF(" : VER %d.%d.%d", (u32ver>>16)&0xFF, (u32ver>>8)&0xFF, u32ver&0xFF );
-//				return;
-//			}
+			if (u32ver != VERSION_U32) {
+				vShowResult( pRx->u32SrcAddr, OTA_ERROR_APPVER, pRx->u8Lqi );
+				return;
+			}
+#endif
 
 			// *   OCTET    : 設定有効化 LQI
 			if (pRx->u8Lqi < RMTCNF_MINLQI ) {
 				vShowResult( pRx->u32SrcAddr, OTA_ERROR_LQI, pRx->u8Lqi );
-//				V_PRINTF(LB"!LQI");
-//				V_PRINTF(LB"FAILURE %08X"LB, pRx->u32SrcAddr);
 				return;
 			}
-
 
 			bTranmitRespond(pRx->u32SrcAddr);
 
@@ -207,8 +211,6 @@ static void cbAppToCoNet_vRxEvent(tsRxDataApp *pRx) {
 			sAppData.u8LedState = 0x01;
 		} else
 		if (u8pkttyp == RMTCNF_PKTTYPE_ACK) {
-//			V_PRINTF(LB"!INF ACK CONF FROM %08X", pRx->u32SrcAddr);
-
 			uint8 u8stat = G_OCTET();
 			if (u8stat) {
 				// LED2 点灯
@@ -216,7 +218,6 @@ static void cbAppToCoNet_vRxEvent(tsRxDataApp *pRx) {
 				vShowResult( pRx->u32SrcAddr, OTA_SUCCESS, pRx->u8Lqi );
 			}
 		} else {
-//			V_PRINTF(LB"!PKTTYPE_REQUEST", pRx->u32SrcAddr);
 		}
 	}
 }
@@ -335,22 +336,22 @@ static void vShowResult( uint32 u32id, teOTAStatus eStatus, uint8 u8LQI )
 	V_PRINTF(LB"      OTA request TS=%d[ms]", u32TickCount_ms);
 	V_PRINTF(LB"      LQI:%d (RF strength, >= 100)", u8LQI);
 	V_PRINTF(LB"      SID:%08X", u32id);
-	V_PRINTF(LB"      TWELITE CUE:v%d.%d.%d", (u32ver>>16)&0xFF, (u32ver>>8)&0xFF, u32ver&0xFF);
+	V_PRINTF(LB"      "NAME":v%d.%d.%d", (u32ver>>16)&0xFF, (u32ver>>8)&0xFF, u32ver&0xFF);
 	V_PRINTF(LB"      Protocol Version:0x%02X", u8pktver );
 
 	switch ( eStatus ){
 	case OTA_SUCCESS:
-		V_PRINTF(LB LB"     --- TWELITE CUE is now running on the new settings. ---" );
+		V_PRINTF(LB LB"     --- "NAME" is now running on the new settings. ---" );
 		break;
 	case OTA_ERROR_PRTCLVER:
 		//             1234567890123456789012345678901234567890123456789012345678901234
-		V_PRINTF(LB LB" --- Different protocol version. Please update TWELITE CUE. ---" );
+		V_PRINTF(LB LB" --- Different protocol version. Please update "NAME". ---" );
 		break;
 	case OTA_ERROR_APPVER:
-		V_PRINTF(LB LB" --- Different farmware version. Please update TWELITE CUE. ---" );
+		V_PRINTF(LB LB" --- Different farmware version. Please update "NAME". ---" );
 		break;
 	case OTA_ERROR_LQI:
-		V_PRINTF(LB LB"     --- LQI is small. Please make TWELITE CUE closer. ---" );
+		V_PRINTF(LB LB"     --- LQI is small. Please make "NAME" closer. ---" );
 		break;
 	default:
 		break;

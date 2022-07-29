@@ -52,6 +52,12 @@
 #define IS_APPCONF_OPT_DISABLE_OTA() ((sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_DISABLE_OTA) != 0) //!< E_APPCONF_OPT_WAKE_RANDOM 判定
 
 /**
+ * EXTRAデータを一緒に送信する。
+ */
+#define E_APPCONF_OPT_SEND_EXTRADATA 0x00000100UL
+#define IS_APPCONF_OPT_SEND_EXTRADATA() ((sAppData.sFlash.sData.u32Opt & E_APPCONF_OPT_SEND_EXTRADATA) != 0) //!< E_APPCONF_OPT_WAKE_RANDOM 判定
+
+/**
  * 書式モード(バイナリ)
  */
 #define E_APPCONF_OPT_UART_BIN 0x00000200UL

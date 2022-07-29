@@ -1,8 +1,8 @@
 {
     "C_Cpp.errorSquiggles": "Enabled",
     "C_Cpp.default.includePath": [
-        "App_PAL_EndDevice/**",
-        "Common/**",
+        "App_PAL/App_PAL_EndDevice/**",
+        "App_PAL/Common/**",
         "${env:MWSDK_TWENET_LIBSRC}/**",
         "${env:MWSDK_TWENET_LIBSRC}/src/**"
     ],

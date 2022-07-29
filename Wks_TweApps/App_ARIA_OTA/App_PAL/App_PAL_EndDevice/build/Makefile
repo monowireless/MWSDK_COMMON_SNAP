@@ -27,9 +27,12 @@ else
       include ../Version.mk
     else
       VERSION_MAIN = 1
-      VERSION_SUB  = 4
-      VERSION_VAR  = 0
+      VERSION_SUB  = 5
+      VERSION_VAR  = 1
 
+      # 1.5.1 温湿度センサーのオフセットの指定方法を変更。
+      # 1.5.0 MC3630の平均・最大最小値を計測するモードを追加。
+      # 1.4.1 温湿度センサーにオフセットをかけられる機能を追加
       # 1.4.0 ARIAに対応
       # 1.3.4 CUEモードで60秒以上スリープとリセットがかかる点を修正。
       # 1.3.3 MC3630のイベント検出の閾値を厳しくし、元のパラメータに設定できるようにした。
@@ -74,16 +77,11 @@ APPSRC += sercmd_chat.c
 APPSRC += sercmd_plus3.c
 APPSRC += sercmd_binary.c
 
-APPSRC += ProcessEv_NOC.c
 APPSRC += ProcessEv_MAG.c
-APPSRC += ProcessEv_AMB.c
-APPSRC += ProcessEv_MOT.c
-APPSRC += ProcessEv_MOT_Event.c
-APPSRC += ProcessEv_Accel_Event.c
+
 ### Additional Src/Include Path
 # if set, find source files from given dirs.
 #
-
 
 ifeq ($(BOARD),OTA)
   APPSRC += ProcessEv_ConfigMaster.c
@@ -103,6 +101,9 @@ else
     APPSRC += ProcessEv_CUE.c
     APPSRC += ProcessEv_CUEConfig.c
     APPSRC += ProcessEv_OTA.c
+    APPSRC += ProcessEv_MOT.c
+    APPSRC += ProcessEv_MOT_Event.c
+    APPSRC += ProcessEv_Accel_Event.c
 
     APP_COMMON_SRC_DIR_ADD1 = ../App_PAL/App_PAL_EndDevice/source
     APP_COMMON_SRC_DIR_ADD2 = ../App_PAL/Common/Sensor
@@ -112,7 +113,6 @@ else
     CFLAGS += -DUSE_CUE
   else
     ifeq ($(BOARD),ARIA)
-      APPSRC += ProcessEv_CUE.c
       APPSRC += ProcessEv_ARIA.c
       APPSRC += ProcessEv_CUEConfig.c
       APPSRC += ProcessEv_OTA.c
@@ -126,6 +126,11 @@ else
     else
       APPSRC += ProcessEv_LED.c
       APPSRC += ProcessEv_Config.c
+      APPSRC += ProcessEv_NOC.c
+      APPSRC += ProcessEv_AMB.c
+      APPSRC += ProcessEv_MOT.c
+      APPSRC += ProcessEv_MOT_Event.c
+      APPSRC += ProcessEv_Accel_Event.c
       APP_COMMON_SRC_DIR_ADD1 = ../../../App_PAL/App_PAL_EndDevice/source
       APP_COMMON_SRC_DIR_ADD2 = ../../../App_PAL/Common/Sensor
       APP_COMMON_SRC_DIR_ADD3 = ../../../App_PAL/Common/Source

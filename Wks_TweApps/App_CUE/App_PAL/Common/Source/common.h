@@ -33,7 +33,8 @@ extern uint32 u32DioPortWakeUp;
 #define PKT_ID_MOT 0x03
 #define PKT_ID_LED 0x04
 #define PKT_ID_CUE 0x05
-#define PKT_ID_IRC 0x06
+#define PKT_ID_ARIA 0x06
+#define PKT_ID_IRC 0x07
 
 /*
  * 標準ポート定義 (TWELITE PAL)

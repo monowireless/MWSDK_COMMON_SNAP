@@ -25,7 +25,10 @@ static void vStoreSensorValue();
 static void vProcessENV(teEvent eEvent);
 static uint8 u8sns_cmplt = 0;
 
-static tsSnsObj sSnsObj[2];
+static bool_t bFirstboot = TRUE;
+
+static tsSnsObj sSnsObjSHTC3;
+static tsSnsObj sSnsObjLTR308ALS;
 static tsObjData_SHTC3 sObjSHTC3;
 static tsObjData_LTR308ALS sObjLTR308ALS;
 
@@ -74,14 +77,12 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 			}
 		}
 
-		
-
 		// センサーがらみの変数の初期化
 		u8sns_cmplt = 0;
 
-		vLTR308ALS_Init(&sObjLTR308ALS, &sSnsObj[1]);
-		vSnsObj_Process(&sSnsObj[1], E_ORDER_KICK);
-		if (bSnsObj_isComplete(&sSnsObj[1])) {
+		vLTR308ALS_Init(&sObjLTR308ALS, &sSnsObjLTR308ALS);
+		vSnsObj_Process(&sSnsObjLTR308ALS, E_ORDER_KICK);
+		if (bSnsObj_isComplete(&sSnsObjLTR308ALS)) {
 			// 即座に完了した時はセンサーが接続されていない、通信エラー等
 			u8sns_cmplt |= E_SNS_LTR308ALS_CMP;
 			V_PRINTF(LB "*** LTR308ALS comm err?");
@@ -94,9 +95,9 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 		}
 
 		// SHTC3
-		vSHTC3_Init(&sObjSHTC3, &sSnsObj[0]);
-		vSnsObj_Process(&sSnsObj[0], E_ORDER_KICK);
-		if (bSnsObj_isComplete(&sSnsObj[0])) {
+		vSHTC3_Init(&sObjSHTC3, &sSnsObjSHTC3);
+		vSnsObj_Process(&sSnsObjSHTC3, E_ORDER_KICK);
+		if (bSnsObj_isComplete(&sSnsObjSHTC3)) {
 			// 即座に完了した時はセンサーが接続されていない、通信エラー等
 			u8sns_cmplt |= E_SNS_SHTC3_CMP;
 			V_PRINTF(LB "*** SHTC3 comm err?");
@@ -199,7 +200,18 @@ PRSEV_HANDLER_DEF(E_STATE_APP_WAIT_TX, tsEvent *pEv, teEvent eEvent, uint32 u32e
 
 		S_OCTET(0x01);			// Temp
 		S_OCTET(0x00);
-		S_BE_WORD(sObjSHTC3.ai16Result[SHTC3_IDX_TEMP]);
+
+		int16 i16temp = sObjSHTC3.ai16Result[SHTC3_IDX_TEMP];
+
+		if( sAppData.sFlash.sData.u32TmpCoefficient ){
+			i16temp = ((sAppData.sFlash.sData.u32TmpCoefficient*(int32)i16temp)>>10) + sAppData.sFlash.sData.i16TmpOffset;
+		}else{
+			i16temp = i16temp + sAppData.sFlash.sData.i16TmpOffset;
+		}
+
+		V_PRINTF(LB"%d, %d(%d,%d)", sObjSHTC3.ai16Result[SHTC3_IDX_TEMP], i16temp, sAppData.sFlash.sData.u32TmpCoefficient, sAppData.sFlash.sData.i16TmpOffset );
+
+		S_BE_WORD(i16temp);
 
 		if(sObjSHTC3.ai16Result[SHTC3_IDX_TEMP] == SHTC3_DATA_ERROR || sObjSHTC3.ai16Result[SHTC3_IDX_TEMP] == SHTC3_DATA_NOTYET  ){
 			au8ErrCount[0]++;
@@ -209,7 +221,18 @@ PRSEV_HANDLER_DEF(E_STATE_APP_WAIT_TX, tsEvent *pEv, teEvent eEvent, uint32 u32e
 
 		S_OCTET(0x02);			// Hum
 		S_OCTET(0x00);
-		S_BE_WORD(sObjSHTC3.ai16Result[SHTC3_IDX_HUMID]);
+
+		int16 i16hum = sObjSHTC3.ai16Result[SHTC3_IDX_HUMID];
+
+		if( sAppData.sFlash.sData.u32HumCoefficient ){
+			i16hum = ((sAppData.sFlash.sData.u32HumCoefficient*(int32)i16hum)>>10) + ((int32)sAppData.sFlash.sData.i16HumOffset);
+		}else{
+			i16hum = i16hum + sAppData.sFlash.sData.i16HumOffset;
+		}
+
+		V_PRINTF(LB"%d, %d(%d,%d)", sObjSHTC3.ai16Result[SHTC3_IDX_HUMID], i16hum, sAppData.sFlash.sData.u32HumCoefficient, sAppData.sFlash.sData.i16HumOffset );
+
+		S_BE_WORD(i16hum);
 
 		if(sObjSHTC3.ai16Result[SHTC3_IDX_HUMID] == SHTC3_DATA_ERROR || sObjSHTC3.ai16Result[SHTC3_IDX_HUMID] == SHTC3_DATA_NOTYET  ){
 			au8ErrCount[1]++;
@@ -240,7 +263,8 @@ PRSEV_HANDLER_DEF(E_STATE_APP_WAIT_TX, tsEvent *pEv, teEvent eEvent, uint32 u32e
 	}
 
 	if (eEvent == E_ORDER_KICK) { // 送信完了イベントが来たのでスリープする
-		if(sAppData.bColdStart){
+		if(bFirstboot){
+			bFirstboot = FALSE;
 			ToCoNet_Event_SetState(pEv, E_STATE_APP_BLINK_LED); // 点滅させる
 		}else{
 			ToCoNet_Event_SetState(pEv, E_STATE_APP_SLEEP); // 寝る
@@ -455,13 +479,13 @@ void vInitAppENV() {
 }
 
 static void vProcessENV(teEvent eEvent) {
-	if (bSnsObj_isComplete(&sSnsObj[0]) && bSnsObj_isComplete(&sSnsObj[1])) {
+	if (bSnsObj_isComplete(&sSnsObjSHTC3) && bSnsObj_isComplete(&sSnsObjLTR308ALS)) {
 		 return;
 	}
 
 	// イベントの処理
-	vSnsObj_Process(&sSnsObj[0], eEvent); // ポーリングの時間待ち
-	if (bSnsObj_isComplete(&sSnsObj[0]) && !(u8sns_cmplt&E_SNS_SHTC3_CMP) ){
+	vSnsObj_Process(&sSnsObjSHTC3, eEvent); // ポーリングの時間待ち
+	if (bSnsObj_isComplete(&sSnsObjSHTC3) && !(u8sns_cmplt&E_SNS_SHTC3_CMP) ){
 		u8sns_cmplt |= E_SNS_SHTC3_CMP;
 
 		V_PRINTF(LB"!SHTC3: %d.%02dC %d.%02d%%",
@@ -476,8 +500,8 @@ static void vProcessENV(teEvent eEvent) {
 		}
 	}
 
-	vSnsObj_Process(&sSnsObj[1], eEvent); // ポーリングの時間待ち
-	if (bSnsObj_isComplete(&sSnsObj[1]) && !(u8sns_cmplt&E_SNS_LTR308ALS_CMP) ) {
+	vSnsObj_Process(&sSnsObjLTR308ALS, eEvent); // ポーリングの時間待ち
+	if (bSnsObj_isComplete(&sSnsObjLTR308ALS) && !(u8sns_cmplt&E_SNS_LTR308ALS_CMP) ) {
 		u8sns_cmplt |= E_SNS_LTR308ALS_CMP;
 
 		V_PRINTF(LB"!LTR308ALS: %d Lux", sObjLTR308ALS.u32Result);

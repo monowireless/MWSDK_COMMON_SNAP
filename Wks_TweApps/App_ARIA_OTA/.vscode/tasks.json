@@ -4,7 +4,7 @@
     "windows": { "options": { "shell": { "executable": "cmd.exe", "args": ["/c"] } } },
     "tasks": [
         {
-            "label": "Clean for App_CUE OTA",
+            "label": "Clean for App_ARIA OTA",
             "type": "shell",
             "windows": {
                 "command": "sh",
@@ -36,7 +36,7 @@
             "group": "build"
         },
        {
-            "label": "Build App_CUE OTA for TWELITE BLUE",
+            "label": "Build App_ARIA OTA for TWELITE BLUE",
             "type": "shell",
             "windows": {
                 "command": "sh",
@@ -75,7 +75,7 @@
             }
         },
         {
-            "label": "Build App_CUE OTA for TWELITE RED",
+            "label": "Build App_ARIA OTA for TWELITE RED",
             "type": "shell",
             "windows": {
                 "command": "sh",

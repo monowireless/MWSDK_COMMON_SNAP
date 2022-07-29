@@ -12,6 +12,9 @@
 #include "ToCoNet_event.h"
 #include "sensor_driver.h"
 
+tsSnsObj sSnsObj;
+
+
 /** @ingroup SNSDRV
  * センサー状態マシンを初期化する
  *

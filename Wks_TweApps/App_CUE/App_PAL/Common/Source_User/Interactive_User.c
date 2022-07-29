@@ -27,10 +27,17 @@ static void Config_vSetDefaults(tsFlashApp *p) {
 	p->u32Slp = DEFAULT_SLEEP_DUR;
 	p->u32param = 0;
 
-#ifndef USE_CUE
+#if !defined(USE_CUE) && !defined(USE_ARIA)
 	memset( p->au8Event, 0, 137 );
 	memcpy( p->au8Event, "0180002A0208002A0300802A0488002A0580802A0608802A0880000A1008000A", 8*8);
 	p->u8EventNum = 8;
+#endif
+
+#if !defined(USE_CUE)
+	p->u32TmpCoefficient = 0;
+	p->i16TmpOffset = 0;
+	p->u32HumCoefficient = 0;
+	p->i16HumOffset = 0;
 #endif
 
 	p->u32Opt = 1; // デフォルトの設定ビット

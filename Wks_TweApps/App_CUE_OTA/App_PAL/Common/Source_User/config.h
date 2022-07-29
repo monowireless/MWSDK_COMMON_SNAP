@@ -39,9 +39,15 @@ extern "C" {
 #define APP_ID				0x67720102
 #define CHANNEL				18
 #else
+#ifdef USE_ARIA
+#define APP_NAME            "App_ARIA"
+#define APP_ID				0x67720102
+#define CHANNEL				18
+#else
 #define APP_NAME            "App_PAL"
 #define APP_ID				0x67726305
 #define CHANNEL				15
+#endif
 #endif
 
 #define CHMASK              (1UL << CHANNEL)
@@ -56,7 +62,7 @@ extern "C" {
 /**
  * 子機のデフォルトスリープ周期
  */
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 #define DEFAULT_SLEEP_DUR (5UL)
 #else
 #define DEFAULT_SLEEP_DUR (60UL)

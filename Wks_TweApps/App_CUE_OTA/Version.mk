@@ -5,9 +5,11 @@
 ##########################################################################
 
 VERSION_MAIN = 1
-VERSION_SUB  = 0
-VERSION_VAR  = 3
+VERSION_SUB  = 1
+VERSION_VAR  = 0
 
+
+# 1.1.0 CUEのバージョン変更に伴う変更
 # 1.0.3 CUEのバージョン変更に伴う変更
 # 1.0.2 First release version
 # 0.1.0 First version

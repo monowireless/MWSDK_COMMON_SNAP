@@ -38,6 +38,12 @@ typedef struct _tsFlashApp {
 	uint8 au8Event[137];		//!< イベントの内容
 	uint8 u8EventNum;		//!< 設定したイベントの数
 #endif
+#if !defined(USE_CUE)
+	uint32 u32TmpCoefficient;
+	int16 i16TmpOffset;
+	uint32 u32HumCoefficient;
+	int32 i16HumOffset;
+#endif
 } tsFlashApp;
 
 

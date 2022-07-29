@@ -6,6 +6,8 @@
 
 #ifdef USE_CUE
 #include "App_CUE.h"
+#elif USE_ARIA
+#include "App_ARIA.h"
 #else
 #include "EndDevice.h"
 #endif
@@ -61,8 +63,6 @@ static bool_t bSendData( int16 ai16accel[3][32], uint8 u8startAddr, uint8 u8Samp
 void vSetLED();
 
 static uint8 u8sns_cmplt = 0;
-static tsSnsObj sSnsObj;
-static tsObjData_MC3630 sObjMC3630;
 static uint8 u8Event_before = 0; 
 static bool_t bShortSleep = FALSE;
 

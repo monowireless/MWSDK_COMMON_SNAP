@@ -1,3 +1,12 @@
-ARIA 設定アプリ(OTA)
-MONOSTICK用です。無線経由で ARIA の設定を行います。ﾀｰﾐﾅﾙ画面上で ARIA に反映させたい設定を行います。設定後 MONOSTICK の近くで ARIA の磁石の操作(電池入れも可)を行うと設定が反映されます。
-https://mono-wireless.com/jp/products/twelite-aria/
+[JAPANESE]
+TITLE=MONOSTICK用 TWELITE ARIA向け OTA設定アプリ
+DESC=MONOSTICKに書き込み、無線経由で TWELITE ARIA の設定を行います。
+ターミナル画面上で TWELITE ARIA に対する設定を入力します。
+MONOSTICK の近くで ARIA の磁石を何度か近づける(または電池を入れる)と、設定が反映されます。
+URL=https://twelite.gitbook.io/mw-pug-aria/settings/settings-by-ota
+[ENGLISH]
+TITLE=App_ARIA OTA-Setting-App for the MONOSTICK.
+DESC=Configure the TWELITE ARIA in over-the-air with a MONOSTICK.
+At first, set parameters on the terminal for the TWELITE ARIA.
+Next, put the device near the MONOSTICK and move a magnet close repeatedly (or insert a battery).
+URL=https://twelite.gitbook.io/mw-pug-aria/settings/settings-by-ota

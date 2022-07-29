@@ -30,7 +30,66 @@ extern tsFILE sSerStream;
 tsFILE sDebugStream;
 
 bool_t bFIFO = TRUE;
+bool_t bOneShot = FALSE;
 uint8 u8Samples;
+uint8 u8Frequency;
+uint8 u8PowerMode;	// 0: UltraLowPower, 1: LowPower, 2: Precision
+
+uint8 au8SplFreq[3][16] = {
+	{
+		MC3630_ULTRALOWPOWER_SAMPLING25HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING50HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING100HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING190HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING380HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING750HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING1100HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING1300HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING004HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING008HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING015HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING06HZ,
+		MC3630_ULTRALOWPOWER_SAMPLING13HZ,
+		MC3630_ULTRALOWPOWER_DEFAULT,
+		MC3630_ULTRALOWPOWER_DEFAULT,
+		MC3630_ULTRALOWPOWER_DEFAULT
+	},
+	{
+		MC3630_LOWPOWER_SAMPLING004HZ,
+		MC3630_LOWPOWER_SAMPLING008HZ,
+		MC3630_LOWPOWER_SAMPLING015HZ,
+		MC3630_LOWPOWER_SAMPLING07HZ,
+		MC3630_LOWPOWER_SAMPLING14HZ,
+		MC3630_LOWPOWER_SAMPLING28HZ,
+		MC3630_LOWPOWER_SAMPLING54HZ,
+		MC3630_LOWPOWER_SAMPLING105HZ,
+		MC3630_LOWPOWER_SAMPLING210HZ,
+		MC3630_LOWPOWER_SAMPLING400HZ,
+		MC3630_LOWPOWER_SAMPLING600HZ,
+		MC3630_LOWPOWER_SAMPLING750HZ,
+		MC3630_LOWPOWER_DEFAULT,
+		MC3630_LOWPOWER_DEFAULT,
+		MC3630_LOWPOWER_DEFAULT,
+		MC3630_LOWPOWER_DEFAULT },
+	{
+		MC3630_PRECISION_SAMPLING002HZ,
+		MC3630_PRECISION_SAMPLING004HZ,
+		MC3630_PRECISION_SAMPLING009HZ,
+		MC3630_PRECISION_SAMPLING07HZ,
+		MC3630_PRECISION_SAMPLING14HZ,
+		MC3630_PRECISION_SAMPLING28HZ,
+		MC3630_PRECISION_SAMPLING55HZ,
+		MC3630_PRECISION_SAMPLING80HZ,
+		MC3630_PRECISION_SAMPLING100HZ,
+		MC3630_PRECISION_DEFAULT,
+		MC3630_PRECISION_DEFAULT,
+		MC3630_PRECISION_DEFAULT,
+		MC3630_PRECISION_DEFAULT,
+		MC3630_PRECISION_DEFAULT,
+		MC3630_PRECISION_DEFAULT,
+		MC3630_PRECISION_DEFAULT
+	}
+};
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -86,6 +145,24 @@ PUBLIC bool_t bMC3630_reset( uint8 Freq, uint8 Range, uint8 SplNum )
 {
 
 	u8Samples = SplNum;
+	u8Frequency = (Freq&0x0F);
+	bOneShot = (u8Samples==1) ? TRUE:FALSE;
+
+	switch(Freq>>4)
+	{
+		case 0:
+			u8PowerMode = 0x03;
+			break;
+		case 1:
+			u8PowerMode = 0x00;
+			break;
+		case 2:
+			u8PowerMode = 0x04;
+			break;
+		default:
+			u8PowerMode = 0x03;
+			break;
+	}
 
     /* configure SPI interface */
 	/*	SPI Mode3	*/
@@ -99,13 +176,10 @@ PUBLIC bool_t bMC3630_reset( uint8 Freq, uint8 Range, uint8 SplNum )
 	// Reset
 	vSPIWrite8(CS_DIO19, MC3630_RESET|MC3630_WRITE, 0x40);
 
-	vWait(100000);
-
 	// ここからおまじない
 	vSPIWrite8(CS_DIO19, 0x1B|MC3630_WRITE, 0x00);
 	// Wait
-	TWESYSUTL_vWaitPollMicro(2500);
-	//vWait(5000);
+	TWESYSUTL_vWaitPoll(1);
 
 	vSPIWrite8(CS_DIO19, MC3630_STATUS_2|MC3630_WRITE, 0x00);
 	vSPIWrite8(CS_DIO19, MC3630_INIT_1|MC3630_WRITE, 0x42);
@@ -133,17 +207,17 @@ PUBLIC bool_t bMC3630_reset( uint8 Freq, uint8 Range, uint8 SplNum )
 	vSPIWrite8(CS_DIO19, MC3630_FREG_1|MC3630_WRITE, 0x80);
 
 	// SPIのクロックと加速度計測をUltraLowPowerに変更する
-	vSPIWrite8(CS_DIO19, MC3630_PMCR|MC3630_WRITE, 0x80|0x30|0x03);
+	vSPIWrite8(CS_DIO19, MC3630_PMCR|MC3630_WRITE, 0x80|(u8PowerMode<<4)|u8PowerMode);
 
 	// SPIをハイスピードモードに変更したのでクロックの周波数を変更する
 	vSPIInit( SPI_MODE3, SLAVE_ENABLE1, 1 );
 
 	// サンプリング周波数
-	vSPIWrite8(CS_DIO19, MC3630_RATE_1|MC3630_WRITE, Freq);
-	vSPIWrite8(CS_DIO19, MC3630_SNIFF_C|MC3630_WRITE, Freq);
+	vSPIWrite8(CS_DIO19, MC3630_RATE_1|MC3630_WRITE, u8Frequency);
+	vSPIWrite8(CS_DIO19, MC3630_SNIFF_C|MC3630_WRITE, u8Frequency);
 
 	// レンジを16g、12bitの分解能にする
-	vSPIWrite8(CS_DIO19, MC3630_RANGE_C|MC3630_WRITE, Range|0x04);
+	vSPIWrite8(CS_DIO19, MC3630_RANGE_C|MC3630_WRITE, Range|( bOneShot?0x05:0x04 ));
 
 	// 読み書きするときのレジスタ指定のところで加速度センサのステータスを返すようにする
 	vSPIWrite8(CS_DIO19, MC3630_FREG_2|MC3630_WRITE, 0x04);
@@ -197,7 +271,7 @@ PUBLIC uint8 u8MC3630_readResult( int16* ai16x, int16* ai16y, int16* ai16z )
 		vSPIChipSelect(CS_DIO19);
 	   	vSPIWrite(MC3630_READ|MC3630_XOUT_LSB);
 		u8status = u8SPIRead();
-		if( (u8status&0x10)){
+		if( (u8status&0x10) && !bOneShot){
 			vSPIStop();
 			break;
 		}
@@ -208,10 +282,14 @@ PUBLIC uint8 u8MC3630_readResult( int16* ai16x, int16* ai16y, int16* ai16z )
 		}
 		vSPIStop();
 
-		ai16x[u8num] = (au8data[1]<<8|au8data[0])*8;
-		ai16y[u8num] = (au8data[3]<<8|au8data[2])*8;
-		ai16z[u8num] = (au8data[5]<<8|au8data[4])*8;
+		uint8 u8Shift = bOneShot? 1:3;
+
+		ai16x[u8num] = (au8data[1]<<8|au8data[0])<<u8Shift;
+		ai16y[u8num] = (au8data[3]<<8|au8data[2])<<u8Shift;
+		ai16z[u8num] = (au8data[5]<<8|au8data[4])<<u8Shift;
 		u8num++;
+
+		if(bOneShot) break;
 	}
 
 	vMC3630_ClearInterrupReg();
@@ -261,7 +339,7 @@ PUBLIC void vMC3630_ClearInterrupReg()
 PUBLIC void vMC3630_Wakeup()
 {
 	uint8 u8com = 0x02;
-	if( bFIFO ){
+	if( bFIFO || bOneShot ){
 		u8com = 0x05;
 	}
 
@@ -388,6 +466,13 @@ PUBLIC void vMC3630_StartFIFO( void )
 	vMC3630_Wakeup();
 }
 
+// ワンショットモードの時のみ使用する。
+PUBLIC bool_t bMC3630_Available()
+{
+	uint8 u8status = u8SPIRead8(CS_DIO19, MC3630_STATUS_1|MC3630_READ);
+	return (u8status&0x08) ? TRUE:FALSE;
+}
+
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/
@@ -467,26 +552,41 @@ vfPrintf(&sDebugStream, "\n\rMC3630 WAKEUP");
 		}
 
 		// wait until completion
-		if (pObj->u8TickCount > pObj->u8TickWait) {
-#ifdef MC3630_ALWAYS_RESET
-			if (u8reset_flag) {
-				u8reset_flag = 0;
-				if (!bMC3630_startRead()) {
-					vMC3630_new_state(pObj, E_SNSOBJ_STATE_COMPLETE);
-				}
+		if(bOneShot){
+			//vfPrintf(&sSerStream, ",,,");
+			if( bMC3630_Available() ){
+				pObj->u8FIFOSample = u8MC3630_readResult( pObj->ai16Result[MC3630_X], pObj->ai16Result[MC3630_Y], pObj->ai16Result[MC3630_Z] );
+				pObj->u8SampleFreq = u8MC3630_ReadSamplingFrequency();
 
-				pObj->u8TickCount = 0;
-				pObj->u8TickWait = MC3630_CONVTIME;
-				break;
+				// data arrival
+				pObj->bBusy = FALSE;
+				vSnsObj_NewState(pSnsObj, E_SNSOBJ_STATE_COMPLETE);
+			}else{
+				//vPutChar(&sSerStream, '.');
 			}
+
+		}else{
+			if (pObj->u8TickCount > pObj->u8TickWait) {
+#ifdef MC3630_ALWAYS_RESET
+				if (u8reset_flag) {
+					u8reset_flag = 0;
+					if (!bMC3630_startRead()) {
+						vMC3630_new_state(pObj, E_SNSOBJ_STATE_COMPLETE);
+					}
+
+					pObj->u8TickCount = 0;
+					pObj->u8TickWait = MC3630_CONVTIME;
+					break;
+				}
 #endif
 
-			pObj->u8FIFOSample = u8MC3630_readResult( pObj->ai16Result[MC3630_X], pObj->ai16Result[MC3630_Y], pObj->ai16Result[MC3630_Z] );
-			pObj->u8SampleFreq = u8MC3630_ReadSamplingFrequency();
+				pObj->u8FIFOSample = u8MC3630_readResult( pObj->ai16Result[MC3630_X], pObj->ai16Result[MC3630_Y], pObj->ai16Result[MC3630_Z] );
+				pObj->u8SampleFreq = u8MC3630_ReadSamplingFrequency();
 
-			// data arrival
-			pObj->bBusy = FALSE;
-			vSnsObj_NewState(pSnsObj, E_SNSOBJ_STATE_COMPLETE);
+				// data arrival
+				pObj->bBusy = FALSE;
+				vSnsObj_NewState(pSnsObj, E_SNSOBJ_STATE_COMPLETE);
+			}
 		}
 		break;
 
@@ -494,7 +594,7 @@ vfPrintf(&sDebugStream, "\n\rMC3630 WAKEUP");
 		switch (eEvent) {
 		case E_EVENT_NEW_STATE:
 			#ifdef SERIAL_DEBUG
-			vfPrintf(&sDebugStream, "\n\rMC3630_CP: %d", pObj->i16Result);
+			vfPrintf(&sDebugStream, "\n\rMC3630_CP: %d", pObj->ai16Result[0][0]);
 			#endif
 
 			break;

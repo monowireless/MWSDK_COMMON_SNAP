@@ -1,4 +1,10 @@
-ARIAアプリ
-TWELITE ARIAに書き込んで使用します。
-※親機・中継機は App_Wings を用います。
-https://mono-wireless.com/jp/products/twelite-aria/
+[JAPANESE]
+TITLE=アリアアプリ
+DESC=TWELITE ARIAにプリインストールされています。
+※親機・中継機には App_Wings を用います。
+URL=https://mono-wireless.com/jp/products/twelite-aria/
+[ENGLISH]
+TITLE=App_ARIA
+DESC=Pre-installed on the TWELITE ARIA.
+*Please use the App_Wings for the parent device or routers.
+URL=https://mono-wireless.com/jp/products/twelite-aria/

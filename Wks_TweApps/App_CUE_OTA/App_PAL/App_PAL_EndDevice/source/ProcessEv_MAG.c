@@ -12,6 +12,8 @@
 #include "App_CUE.h"
 #include "SPI.h"
 #include "MC3630.h"
+#elif USE_ARIA
+#include "App_ARIA.h"
 #else
 #include "EndDevice.h"
 #endif
@@ -50,7 +52,7 @@ PRSEV_HANDLER_DEF(E_STATE_IDLE, tsEvent *pEv, teEvent eEvent, uint32 u32evarg) {
 			V_PRINTF(LB "*** Cold starting");
 			V_PRINTF(LB "* start end device[%d]", u32TickCount_ms & 0xFFFF);
 
-#ifdef USE_CUE
+#if defined(USE_CUE)
 			// SPIの初期化
 			vSPIInit( SPI_MODE3, SLAVE_ENABLE1, 1);
 			vMC3630_Sleep();
@@ -90,7 +92,7 @@ PRSEV_HANDLER_DEF(E_STATE_APP_WAIT_INPUT, tsEvent *pEv, teEvent eEvent, uint32 u
 	static bool_t bTimeout = FALSE;
 	if( eEvent == E_EVENT_NEW_STATE ){
 		DI_Bitmap = bPortRead(SNS_EN) ? 0x01 : 0x00;
-#ifdef USE_CUE
+#if defined(USE_CUE) || defined(USE_ARIA)
 		DI_Bitmap |= bPortRead(INPUT_PC) ? 0x02 : 0x00;
 #else
 		DI_Bitmap |= bPortRead(SNS_INT) ? 0x02 : 0x00;

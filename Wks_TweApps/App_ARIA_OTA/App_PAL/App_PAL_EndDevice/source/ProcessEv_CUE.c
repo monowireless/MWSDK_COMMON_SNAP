@@ -31,8 +31,6 @@ static bool_t bTap = TRUE;
 #define ABS(c) (c<0?(-1*c):c)
 
 static uint8 u8sns_cmplt = 0;
-static tsSnsObj sSnsObj;
-static tsObjData_MC3630 sObjMC3630;
 
 static uint8 DI_Bitmap = 0;
 static bool_t bInverse = FALSE;
