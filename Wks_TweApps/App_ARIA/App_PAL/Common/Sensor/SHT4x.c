@@ -139,8 +139,8 @@ PUBLIC bool_t bSHT4xstartRead()
 PUBLIC int16 i16SHT4xreadResult(int16 *pi16Temp, int16 *pi16Humid)
 {
 	bool_t bOk = TRUE;
-	int16 i16temp;
-	uint16 u16hum;
+	uint16 u16temp_val;
+	uint16 u16humid_val;
 	uint8 au8data[6];
 
 	bOk &= bSMBusSequentialRead(SHT4x_ADDRESS, 6, au8data);
@@ -153,14 +153,21 @@ PUBLIC int16 i16SHT4xreadResult(int16 *pi16Temp, int16 *pi16Humid)
 	u8crc = u8CRC8(au8data+3,2);
 	if (au8data[5] != u8crc) return SHT4x_DATA_ERROR;
 
- 	i16temp = au8data[1] + (au8data[0] << 8);
-	if(pi16Temp) *pi16Temp = (int16)(((17500*i16temp)>>16)-4500);
-//	if(pi16Temp) *pi16Temp = (int16)(((17500*i16temp)/65535)-4500);		// 正確にはこの計算式
+ 	u16temp_val = au8data[1] + (au8data[0] << 8);
+	if(pi16Temp){
+		*pi16Temp = (int16)(((17500UL*u16temp_val)>>16)-4500);
+//		*pi16Temp = (int16)(((17500*u16temp_val)/65535)-4500);		// 正確にはこの計算式
+		if(*pi16Temp > 13000 || -4500 > *pi16Temp ) *pi16Temp = SHT4x_DATA_ERROR;
+	}
 	else return SHT4x_DATA_ERROR;
 
-	u16hum = au8data[4] + (au8data[3] << 8);
-	if(pi16Humid) *pi16Humid = (int16)( ((u16hum*12500)>>16)-600 );
-//	if(pi16Humid) *pi16Humid = (int16)( ((u16hum*12500)/65535)-600 );	// 正確にはこの計算式
+	u16humid_val = au8data[4] + (au8data[3] << 8);
+	if(pi16Humid){
+		*pi16Humid = (int16)( ((12500UL*u16humid_val)>>16)-600 );
+//		*pi16Humid = (int16)( ((12500*u16humid_val)/65535)-600 );	// 正確にはこの計算式
+		if(*pi16Humid > 10000) *pi16Humid = 10000;
+		if(*pi16Humid < 0) *pi16Humid = 0;
+	}
 	else return SHT4x_DATA_ERROR;
 
 	return 0;

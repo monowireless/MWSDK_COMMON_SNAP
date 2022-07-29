@@ -4,7 +4,7 @@
  * @author alnasl
  * @date   Thu Jun 16 14:45:57 2022
  *
- * @brief  Act driver for AQM0802 LCD modules built with the Sitronix ST7032 LCD controller
+ * @brief  Act driver for AQM0802 / AQM1602 LCD modules built with the Sitronix ST7032 LCD controller
  *
  * Copyright (C) 2022 Mono Wireless Inc. All Rights Reserved.
  * Released under MW-OSSLA-*J,*E (MONO WIRELESS OPEN SOURCE SOFTWARE LICENSE AGREEMENT).
@@ -14,18 +14,20 @@
 
 // Include Files //////////////////////////////////////////////////////////////
 
+#include <TWELITE>
+
 #include <stdarg.h>             // For printf
 #include <stdint.h>             // For uint8_t
 
 
 // Macro Definitions //////////////////////////////////////////////////////////
 
-/// Display width
-#define AQM0802_COLUMNS 8
-/// Display height
-#define AQM0802_ROWS 2
+/// Display maximum width
+#define ST7032_MAX_COLUMNS 16
+/// Display maximum height
+#define ST7032_MAX_ROWS 2
 /// Maximum length of printf() strings
-#define AQM0802_PRINTF_MAX 64
+#define ST7032_PRINTF_MAX 64
 
 
 // Type Definitions ///////////////////////////////////////////////////////////
@@ -34,6 +36,12 @@
 enum st7032_ctrl_byte_e {
     ST7032_INSTRUCTION = 0x00,
     ST7032_DATA = 0x40
+};
+
+// Module type (AQM0802 / AQM1602)
+enum st7032_module_type_e {
+    TYPE_AQM0802,
+    TYPE_AQM1602
 };
 
 /// Cursor structure
@@ -45,7 +53,10 @@ struct st7032_cursor_s {
 
 // Class Definition ///////////////////////////////////////////////////////////
 
-class AQM0802 {
+class AQM0802 : public mwx::stream<AQM0802> {
+    /// SUPER: for using mwx::stream
+    using SUPER = mwx::stream<AQM0802>;
+
 private:
     /**
      * @brief   I2C slave address
@@ -54,11 +65,19 @@ private:
     /**
      * @brief   Virtual VRAM
      */
-    char vvram[AQM0802_ROWS][AQM0802_COLUMNS];
+    char vvram[ST7032_MAX_ROWS][ST7032_MAX_COLUMNS];
     /**
      * @brief   Current cursor positions (row/col)
      */
     st7032_cursor_s cursor;
+    /**
+     * @brief   Number of display rows (height)
+     */
+    uint8_t rows;
+    /**
+     * @brief   Number of display columns (width)
+     */
+    uint8_t columns;
 
 public:
     /**
@@ -78,10 +97,11 @@ public:
      * @fn      begin
      * @brief   Setup the display
      *
-     * @param   none
+     * @param   type        Module type (TYPE_AQM0802 or TYPE_AQM1602)
+     * @param   contrast    Contrast value (C5-C0 in ST7032). If not set, use preferred value for AQM0802 / AQM1602.
      * @return  none
      */
-    void begin();
+    void begin(const st7032_module_type_e type = TYPE_AQM0802, const int8_t contrast = -1);
 
     /**
      * @fn      clear
@@ -165,10 +185,11 @@ private:
      * @fn      initializeDisplay
      * @brief   Initialize the display
      *
-     * @param   none
+     * @param   type      Module type (TYPE_AQM0802 or TYPE_AQM1602)
+     * @param   contrast    Contrast value (C5-C0 in ST7032)
      * @return  none
      */
-    void initializeDisplay();
+    void initializeDisplay(const st7032_module_type_e type = TYPE_AQM0802, int8_t contrast = -1);
 
     /**
      * @fn      updateDisplayWithVVRAM
@@ -198,4 +219,65 @@ private:
      * @return  none
      */
     void moveDisplayCursorTo(const uint8_t row, const uint8_t col);
+
+public:
+    /**
+     * @fn      available
+     * @brief   Check for input
+     * @see     class derived from mwx::stream must have this interface
+     *
+     * @param   none
+     * @return  0   No input (this stream is output only)
+     */
+    inline int available() {
+        return 0;                   // No data to read
+    }
+
+    /**
+     * @fn      flush
+     * @brief   Force output from the buffer, wait for it
+     * @see     class derived from mwx::stream must have this interface
+     *
+     * @param   none
+     * @return  none
+     */
+    inline void flush() {
+        this->updateDisplayWithVVRAM();
+    }
+
+    /**
+     * @fn      read
+     * @brief   Read 1 byte from the input stream
+     * @see     class derived from mwx::stream must have this interface
+     *
+     * @param   none
+     * @return  -1  No input (this stream is output only)
+     */
+    inline int read() {
+        return -1;                  // No data to read
+    }
+
+    /**
+     * @fn      write
+     * @brief   Write 1 byte to the output stream
+     * @see     class derived from mwx::stream must have this interface
+     *
+     * @param   n   Data to write
+     * @return  1   Wrote length
+     */
+    inline size_t write(int n) {
+        this->putc(n);
+        return 1;
+    }
+
+    /**
+     * @fn      vOutput
+     * @brief   (static method) Write 1 byte to the output stream
+     * @see     class derived from mwx::stream must have this interface
+     *
+     * @param   out     Character to write
+     * @param   vp      Pointer to the class instance
+     * @return  none
+     */
+    static void vOutput(char out, void* vp);
 };

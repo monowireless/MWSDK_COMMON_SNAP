@@ -245,7 +245,7 @@ bool_t bTransmitToParent(tsToCoNet_Nwk_Context *pNwk, uint8 *pu8Data, uint8 u8Le
 	uint8 u8nEventFlag = 0x80;
 	uint8 u8PID = sPALData.u8PALModel&0x7F;
 	if( sPALData.u8PALModel == PKT_ID_CUE  ){
-		if( IS_APPCONF_OPT_FIFOMODE() || IS_APPCONF_OPT_AVERAGEMODE() ){
+		if( IS_APPCONF_OPT_FIFOMODE() || IS_APPCONF_OPT_AVERAGEMODE() || IS_APPCONF_OPT_ONESHOTMODE() ){
 			u8PID = PKT_ID_MOT;
 		}else
 		if( IS_APPCONF_OPT_EVENTMODE() || IS_APPCONF_OPT_DICEMODE() ){

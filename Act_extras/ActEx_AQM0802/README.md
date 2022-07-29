@@ -2,17 +2,17 @@
 
 ## はじめに / About
 
-Sitronix社のI2C接続LCDコントローラ ST7032 を実装したLCDモジュール AQM0802 を使用するサンプルです。
+Sitronix社のI2C接続LCDコントローラ ST7032 を実装したLCDモジュール AQM0802 または AQM1602 を使用するサンプルです。
 
-Act sample using AQM0802 LCD modules built with the Sitronix ST7032 I2C controller.
+Act sample using AQM0802 or AQM1602 LCD modules built with the Sitronix ST7032 I2C controller.
 
 ## 接続方法 / Connection
 
 ![Wiring AQM0802](.images/actex_aqm0802_wiring_sm.png)
 
-AQM0802の電源およびリセットピンを接続したうえで、I2C SCLとI2C SDAをTWELITEに接続します。
+電源およびリセットピンを接続したうえで、I2C SCLとI2C SDAをTWELITEに接続します。
 
-Connect powerlines and the reset pin on the AQM0802, then connect I2C SCL and I2C SDA to the TWELITE.
+Connect powerlines and the reset pin, then connect I2C SCL and I2C SDA to the TWELITE.
 
 ## 動作環境 / Environment
 
@@ -26,6 +26,7 @@ Connect powerlines and the reset pin on the AQM0802, then connect I2C SCL and I2
     - [TWELITE R2 (MW-LITER2)](https://mono-wireless.com/jp/products/TWE-LITE-R/index.html)
   - 他社製品
     - [Ｉ２Ｃ接続小型ＬＣＤモジュール (AE-AQM0802)](https://akizukidenshi.com/catalog/g/gM-09109/)
+    - [Ｉ２Ｃ接続小型ＬＣＤモジュール (AE-AQM1602A)](https://akizukidenshi.com/catalog/g/gK-08896/)
 
 This Act has been tested in the following environment:
 
@@ -37,6 +38,7 @@ This Act has been tested in the following environment:
     - [TWELITE R2 (MW-LITER2)](https://mono-wireless.com/jp/products/TWE-LITE-R/index.html)
   - Third-party products
     - [Ｉ２Ｃ接続小型ＬＣＤモジュール (AE-AQM0802)](https://akizukidenshi.com/catalog/g/gM-09109/)
+    - [Ｉ２Ｃ接続小型ＬＣＤモジュール (AE-AQM1602A)](https://akizukidenshi.com/catalog/g/gK-08896/)
 
 ## サンプルアクト / Act sample
 
@@ -57,18 +59,24 @@ In the `loop()`, periodically increment the count value with `Timer0` and show e
 ### 初期化 / Initialization
 
 ```C++:ActEx_AQM0802.cpp
-    // Setup the display
     display.begin();
 ```
 
 `AQM0802`クラスのインスタンスをグローバル空間に宣言し、`setup()`内で`AQM0802::begin()`を呼びます。
 
+> ※ AQM1602を使用するには、第1引数に `TYPE_AQM1602` を渡してください。
+
+> ※ コントラストを指定するには、第2引数に `0` から `63` までの数値を渡してください。何も渡さなかった場合のデフォルト値は `23` (AQM0802)、`31` (AQM1602) です。
+
 Create a global instance of the `AQM0802` class, then call `AQM0802::begin()` in the `setup()`.
+
+> \* If AQM1602 is used, pass `TYPE_AQM1602` as the 1st argument for the method.
+
+> \* To specify contrast, pass integer `0` to `63` as the 2nd argument for the method. Default value is `23` (AQM0802) or `31` (AQM1602).
 
 ### 消去 / Clearing
 
 ```C++
-    // Clear the display
     display.clear();
 ```
 
@@ -78,8 +86,8 @@ Use `AQM0802::clear()` to clear contents on the display.
 
 ### 文字列の表示 / Print strings
 
+#### C言語スタイル / C-style
 ```C++:ActEx_AQM0802.cpp
-        // Increment the count number and print it
         display.printf("%05d[s]\n", ++count);
 ```
 
@@ -90,14 +98,23 @@ Use `AQM0802::printf()` to print formatted strings.
 You can use this method like the `printf()` in the C standard library, but maximum count of the string is limited to the `AQM0802_PRINTF_MAX`. Default value is 64.
 
 ```C++:AQM0802/AQM0802.hpp
-/// Maximum length of printf() strings
 #define AQM0802_PRINTF_MAX 64
 ```
+
+#### C++スタイル / Cpp-style
+```C++:ActEx_AQM0802.cpp
+        display << format("%05d[s]", ++count) << mwx::crlf; // Cpp-style
+```
+
+書式文字列を表示する方法として、[mwx::stream](https://mwx.twelite.info/api-reference/classes/twe-stream)を使った方法もあります。
+C++標準ライブラリの`ostream`と同様に使えます。
+
+Alternatively, use [mwx::stream](https://mwx.twelite.info/api-reference/classes/twe-stream) to print formatted strings.
+You can use this interface like the `ostream` in the C++ standard library.
 
 ### 文字の表示 / Put a character
 
 ```C++
-    // Print 'a'
     display.putc('a');
 ```
 
@@ -110,8 +127,7 @@ You can use this method like the `putc()` or `putchar()` in the C standard libra
 ### カーソルの移動 / Move the cursor
 
 ```C++
-    // Move the cursor to the y:1,x:3
-    display.move(1, 3);
+    display.move(1, 3);    // Move the cursor to the y:1,x:3
 ```
 
 `AQM0802::printf()` または `AQM0802::putc()`の表示開始位置を変更するには、`AQM0802::move()`を呼びます。

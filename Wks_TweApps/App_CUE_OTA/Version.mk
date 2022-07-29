@@ -6,9 +6,9 @@
 
 VERSION_MAIN = 1
 VERSION_SUB  = 1
-VERSION_VAR  = 0
+VERSION_VAR  = 1
 
-
+# 1.1.1 App_PALのバージョン変更に伴う変更
 # 1.1.0 CUEのバージョン変更に伴う変更
 # 1.0.3 CUEのバージョン変更に伴う変更
 # 1.0.2 First release version

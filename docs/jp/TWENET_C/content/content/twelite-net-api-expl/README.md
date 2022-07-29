@@ -1,2 +1,0 @@
-# TWELIET NET API overview
-

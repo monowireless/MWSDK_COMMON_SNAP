@@ -1,8 +1,10 @@
 [JAPANESE]
-TITLE=PALｱﾌﾟﾘ
-DESC=EndDevice は子機側で、TWELITE PALに書き込んで使用します。※親機・中継機は App_Wings を用います。
+TITLE=パルアプリ
+DESC="EndDevice" が子機用で、TWELITE PALにプリインストールされています。
+※親機・中継機には App_Wings を用います。
 URL=https://mono-wireless.com/jp/products/TWE-APPS/App_pal/
 [ENGLISH]
 TITLE=App_PAL
-DESC=Write Enddevice to TWELITE PAL and use it as childlen devices. *Please use App_Wings for the parents devices and routers.
+DESC="EndDevice" is for child devices and pre-installed on the TWELITE PAL.
+*Please use the App_Wings for the parent device or routers.
 URL=https://mono-wireless.com/jp/products/TWE-APPS/App_pal/

@@ -6,7 +6,8 @@
 
 VERSION_MAIN = 1
 VERSION_SUB  = 1
-VERSION_VAR  = 0
+VERSION_VAR  = 1
 
+# 1.1.1 App_ARIAのバージョンアップに合わせてバージョンアップ。
 # 1.1.0 App_ARIAのバージョンアップに合わせてバージョンアップ。(パケットバージョンを変更したので、過去バージョンとの互換性はなし。)
 # 1.0.0 First version

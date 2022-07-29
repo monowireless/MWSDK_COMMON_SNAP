@@ -1,2 +1,0 @@
-# About build definitions
-
